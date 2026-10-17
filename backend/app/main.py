@@ -17,34 +17,18 @@ from .scheduler import start_scheduler
 
 print("=== POKREĆEM KUCA APP BACKEND ===")
 
-# Povezivanje na bazu sa ponovnim pokušajima
+# Povezivanje na bazu
 print("Povezujem se na bazu...")
-max_retries = 5
-for i in range(max_retries):
-    try:
-        with engine.connect() as conn:
-            conn.execute(text("SELECT 1"))
-        print("✅ Baza je povezana!")
-        break
-    except Exception as e:
-        print(f"⚠️ Pokušaj {i+1}/{max_retries} nije uspeo: {e}")
-        time.sleep(3)
+Base.metadata.create_all(bind=engine)
+print("✅ Tabele su kreirane!")
 
-# Kreiraj tabele (ako je baza dostupna)
+# Inicijalizacija faza
+db = SessionLocal()
 try:
-    Base.metadata.create_all(bind=engine)
-    print("✅ Tabele su kreirane!")
-except Exception as e:
-    print(f"❌ Greška pri kreiranju tabela: {e}")
-
-# Inicijalizuj faze
-try:
-    db = SessionLocal()
     inicijalizuj_faze(db)
-    db.close()
     print("✅ Faze su inicijalizovane!")
-except Exception as e:
-    print(f"❌ Greška pri inicijalizaciji faza: {e}")
+finally:
+    db.close()
 
 app = FastAPI(
     title="Kuca App API",
@@ -72,11 +56,7 @@ app.include_router(materijali.router)
 
 @app.on_event("startup")
 async def startup():
-    try:
-        start_scheduler()
-        print("✅ Scheduler pokrenut!")
-    except Exception as e:
-        print(f"❌ Greška sa schedulerom: {e}")
+    start_scheduler()
 
 @app.get("/api/health")
 def health():
