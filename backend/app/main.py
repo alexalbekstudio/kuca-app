@@ -1,3 +1,6 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 import time
 from sqlalchemy.exc import OperationalError
 
@@ -11,27 +14,37 @@ from .routers import (
     firme, faze, veze, troskovi, podsetnici, push, kapital, dokumenti, materijali,
 )
 from .scheduler import start_scheduler
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import text
 
 print("=== POKREĆEM KUCA APP BACKEND ===")
 
-# Kreiraj tabele
-try:
-    print("Povezujem se na bazu...")
-    Base.metadata.create_all(bind=engine)
-    print("Baza je povezana i tabele su kreirane!")
-except Exception as e:
-    print(f"GREŠKA PRI POVEZIVANJU NA BAZU: {e}")
-    # Nastavi dalje, da se server ipak pokrene
+# Povezivanje na bazu sa ponovnim pokušajima
+print("Povezujem se na bazu...")
+max_retries = 5
+for i in range(max_retries):
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        print("✅ Baza je povezana!")
+        break
+    except Exception as e:
+        print(f"⚠️ Pokušaj {i+1}/{max_retries} nije uspeo: {e}")
+        time.sleep(3)
 
-# Ostatak tvog main.py koda ostaje isti
-db = SessionLocal()
+# Kreiraj tabele (ako je baza dostupna)
 try:
+    Base.metadata.create_all(bind=engine)
+    print("✅ Tabele su kreirane!")
+except Exception as e:
+    print(f"❌ Greška pri kreiranju tabela: {e}")
+
+# Inicijalizuj faze
+try:
+    db = SessionLocal()
     inicijalizuj_faze(db)
-finally:
     db.close()
+    print("✅ Faze su inicijalizovane!")
+except Exception as e:
+    print(f"❌ Greška pri inicijalizaciji faza: {e}")
 
 app = FastAPI(
     title="Kuca App API",
@@ -59,7 +72,11 @@ app.include_router(materijali.router)
 
 @app.on_event("startup")
 async def startup():
-    start_scheduler()
+    try:
+        start_scheduler()
+        print("✅ Scheduler pokrenut!")
+    except Exception as e:
+        print(f"❌ Greška sa schedulerom: {e}")
 
 @app.get("/api/health")
 def health():
