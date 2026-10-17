@@ -1,6 +1,6 @@
 FROM python:3.12-slim
 
-# Sistemske zavisnosti za OCR i obradu slika
+# Sistemske zavisnosti
 RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr \
     tesseract-ocr-srp \
@@ -14,9 +14,11 @@ WORKDIR /app
 
 ENV PYTHONUNBUFFERED=1
 
-COPY requirements.txt .
+# Putanje sada kreću od backend/ jer Railway gradi iz korena projekta
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app ./app
+COPY backend/app ./app
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Railway ne koristi reload, već obično pokretanje
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
