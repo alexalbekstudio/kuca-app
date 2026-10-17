@@ -1,0 +1,16 @@
+# Osetljivi podaci
+.env
+backend/.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Docker i backup
+backup/
+*.gz
+
+# Sistemski fajlovi
+.DS_Store
+Thumbs.db

@@ -1,0 +1,3283 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuca App</title>
+
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#3498db">
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 { color: #2c3e50; margin-bottom: 5px; }
+        h2 { color: #34495e; margin-top: 0; }
+        .subtitle { color: #7f8c8d; margin-top: 0; }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .status-ok { color: #27ae60; font-weight: bold; }
+        .status-error { color: #e74c3c; font-weight: bold; }
+
+        label { display: block; margin-top: 10px; font-weight: 500; font-size: 14px; }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-top: 4px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        textarea { resize: vertical; min-height: 60px; }
+
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 15px;
+            margin-top: 15px;
+        }
+        button:hover { background: #2980b9; }
+        button.danger { background: #e74c3c; padding: 5px 10px; font-size: 13px; margin: 0; }
+        button.danger:hover { background: #c0392b; }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+        th { background: #f8f9fa; font-weight: 600; }
+        tr:hover { background: #f8f9fa; }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .badge-verifikovano { background: #d4edda; color: #155724; }
+        .badge-neverifikovano { background: #fff3cd; color: #856404; }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-overlay.aktivan { display: flex; }
+
+        .modal {
+            background: white;
+            border-radius: 8px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 25px;
+            position: relative;
+        }
+        .modal-close {
+            position: absolute;
+            top: 10px; right: 15px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #7f8c8d;
+            padding: 5px;
+            margin: 0;
+        }
+        .modal-close:hover { color: #e74c3c; background: none; }
+
+        .modal h2 { margin-top: 0; }
+
+        .detalj-red {
+            display: flex;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+        .detalj-red .label {
+            font-weight: 600;
+            color: #7f8c8d;
+            width: 160px;
+            flex-shrink: 0;
+        }
+        .detalj-red .vrednost { color: #2c3e50; }
+
+        .zvezdice {
+            font-size: 28px;
+            cursor: pointer;
+            user-select: none;
+            color: #ddd;
+            letter-spacing: 3px;
+        }
+        .zvezdice .aktivna { color: #f39c12; }
+
+        .modal-akcije {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .btn-sekundarno {
+            background: #95a5a6;
+        }
+        .btn-sekundarno:hover { background: #7f8c8d; }
+        .btn-verifikuj {
+            background: #27ae60;
+        }
+        .btn-verifikuj:hover { background: #229954; }
+        .btn-neverifikuj {
+            background: #e67e22;
+        }
+        .btn-neverifikuj:hover { background: #ca6f1e; }
+
+        tr.klikabilan { cursor: pointer; }
+
+        /* Faze */
+        .faza-kartica {
+            background: white;
+            border-left: 5px solid #ddd;
+            padding: 15px 20px;
+            margin-bottom: 12px;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            cursor: pointer;
+            transition: transform 0.15s;
+        }
+        .faza-kartica:hover { transform: translateX(3px); }
+
+        .faza-kartica.status-nije_početo { border-left-color: #bdc3c7; }
+        .faza-kartica.status-u_toku { border-left-color: #f39c12; }
+        .faza-kartica.status-završeno { border-left-color: #27ae60; }
+        .faza-kartica.status-blokirano { border-left-color: #e74c3c; }
+
+        .faza-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .faza-broj {
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            line-height: 28px;
+            text-align: center;
+            background: #3498db;
+            color: white;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+        .faza-naziv { font-weight: 600; color: #2c3e50; font-size: 15px; }
+        .faza-opis { color: #7f8c8d; font-size: 13px; margin-left: 38px; }
+
+        .faza-status {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-badge-nije_početo { background: #ecf0f1; color: #7f8c8d; }
+        .status-badge-u_toku { background: #fef5e7; color: #b9770e; }
+        .status-badge-završeno { background: #d5f4e6; color: #1e8449; }
+        .status-badge-blokirano { background: #fadbd8; color: #a93226; }
+
+        .faza-progress {
+            margin-left: 38px;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+        .progress-bar {
+            height: 6px;
+            background: #ecf0f1;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #27ae60;
+            transition: width 0.3s;
+        }
+
+        /* Mapa */
+        #mapa {
+            height: 400px;
+            border-radius: 6px;
+            margin-top: 10px;
+            z-index: 1;
+        }
+        .mapa-kontrole {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .mapa-kontrole button { margin: 0; }
+        .mapa-kontrole .info {
+            color: #7f8c8d;
+            font-size: 13px;
+        }
+
+        /* Marker popup */
+        .leaflet-popup-content { margin: 12px 15px; }
+        .leaflet-popup-content h4 { margin: 0 0 5px 0; color: #2c3e50; }
+        .leaflet-popup-content p { margin: 3px 0; font-size: 13px; color: #7f8c8d; }
+        .leaflet-popup-content a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        /* Budžet */
+        .budzet-rezime {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .budzet-kartica {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 18px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .budzet-kartica.zeleno { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .budzet-kartica.crveno { background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); }
+        .budzet-kartica .label {
+            font-size: 12px;
+            text-transform: uppercase;
+            opacity: 0.9;
+            letter-spacing: 0.5px;
+        }
+        .budzet-kartica .iznos {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .faza-budzet-red {
+            display: grid;
+            grid-template-columns: 40px 1fr 130px 130px 60px;
+            gap: 10px;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+        .faza-budzet-red.header {
+            font-weight: 600;
+            color: #7f8c8d;
+            font-size: 12px;
+            text-transform: uppercase;
+            border-bottom: 2px solid #ddd;
+        }
+        .faza-budzet-red .broj {
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            line-height: 28px;
+            text-align: center;
+            background: #3498db;
+            color: white;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .faza-budzet-red .iznos {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+        .faza-budzet-red .procenat {
+            font-size: 12px;
+            color: #7f8c8d;
+            text-align: right;
+        }
+        .procenat-bar {
+            height: 6px;
+            background: #ecf0f1;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 3px;
+        }
+        .procenat-fill {
+            height: 100%;
+            transition: width 0.3s;
+        }
+        .procenat-fill.ok { background: #27ae60; }
+        .procenat-fill.blizu { background: #f39c12; }
+        .procenat-fill.prekoracenje { background: #e74c3c; }
+
+        /* Podsetnici */
+        .podsetnici-traka {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .podsetnik-kartica {
+            padding: 12px 15px;
+            border-radius: 6px;
+            background: white;
+            border-left: 4px solid #bdc3c7;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .podsetnik-kartica.danas { border-left-color: #3498db; }
+        .podsetnik-kartica.sutra { border-left-color: #f39c12; }
+        .podsetnik-kartica.nedelja { border-left-color: #9b59b6; }
+        .podsetnik-kartica.kasni { border-left-color: #e74c3c; background: #fdedec; }
+
+        .podsetnik-kartica .broj {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .podsetnik-kartica .label {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #7f8c8d;
+            letter-spacing: 0.5px;
+        }
+        .podsetnik-kartica.kasni .broj { color: #e74c3c; }
+
+        .podsetnik-red {
+            display: grid;
+            grid-template-columns: 100px 1fr 130px 80px 100px;
+            gap: 10px;
+            align-items: center;
+            padding: 10px 12px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+        .podsetnik-red:hover { background: #fafafa; }
+        .podsetnik-red.zavrsen { opacity: 0.5; }
+        .podsetnik-red.zavrsen .naslov { text-decoration: line-through; }
+
+        .podsetnik-datum {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 13px;
+        }
+        .podsetnik-datum.danas { color: #3498db; }
+        .podsetnik-datum.sutra { color: #f39c12; }
+        .podsetnik-datum.kasni { color: #e74c3c; }
+
+        .prioritet-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .prioritet-nisko { background: #ecf0f1; color: #7f8c8d; }
+        .prioritet-srednje { background: #d6eaf8; color: #2471a3; }
+        .prioritet-visoko { background: #fdebd0; color: #b9770e; }
+        .prioritet-hitno { background: #fadbd8; color: #a93226; }
+
+        .podsetnik-check {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .kategorija-tag {
+            display: inline-block;
+            font-size: 11px;
+            color: #7f8c8d;
+            background: #f8f9fa;
+            padding: 1px 6px;
+            border-radius: 3px;
+            margin-left: 5px;
+        }
+
+        /* Kapital */
+        .kapital-rezime {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .kapital-kartica {
+            padding: 15px;
+            border-radius: 8px;
+            color: white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+        }
+        .kapital-kartica.plavo { background: linear-gradient(135deg, #2980b9 0%, #3498db 100%); }
+        .kapital-kartica.zeleno { background: linear-gradient(135deg, #16a085 0%, #27ae60 100%); }
+        .kapital-kartica.crveno { background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%); }
+        .kapital-kartica.narandzasto { background: linear-gradient(135deg, #d35400 0%, #e67e22 100%); }
+        .kapital-kartica .label {
+            font-size: 11px;
+            text-transform: uppercase;
+            opacity: 0.9;
+            letter-spacing: 0.5px;
+        }
+        .kapital-kartica .iznos {
+            font-size: 22px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        .kapital-kartica .pod {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 3px;
+        }
+
+        /* Progress bar veliki */
+        .kapital-progress {
+            height: 24px;
+            background: #ecf0f1;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            margin: 15px 0;
+        }
+        .kapital-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #27ae60, #2ecc71);
+            transition: width 0.5s;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .kapital-progress-fill.prekoracenje {
+            background: linear-gradient(90deg, #c0392b, #e74c3c);
+        }
+
+        /* Dokumenti */
+        .drop-zona {
+            border: 2px dashed #bdc3c7;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            background: #fafafa;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 15px;
+        }
+        .drop-zona:hover, .drop-zona.aktivan {
+            border-color: #3498db;
+            background: #eaf2f8;
+        }
+        .drop-zona .ikona { font-size: 40px; color: #7f8c8d; }
+        .drop-zona .tekst { color: #7f8c8d; margin-top: 10px; font-size: 14px; }
+        .drop-zona .fajl-info {
+            margin-top: 10px;
+            font-weight: 600;
+            color: #27ae60;
+        }
+
+        .dokument-red {
+            display: grid;
+            grid-template-columns: 50px 1fr 130px 150px 100px 80px;
+            gap: 12px;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .dokument-red:hover { background: #fafafa; }
+
+        .dokument-ikona {
+            font-size: 28px;
+            text-align: center;
+        }
+
+        .dokument-naziv {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .dokument-meta {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 3px;
+        }
+
+        .dokument-kategorija {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .kat-dozvola { background: #fef5e7; color: #b9770e; }
+        .kat-ugovor { background: #d6eaf8; color: #2471a3; }
+        .kat-racun { background: #d5f4e6; color: #1e8449; }
+        .kat-projekat { background: #ebdef0; color: #7d3c98; }
+        .kat-izjava { background: #fadbd8; color: #a93226; }
+        .kat-ostalo { background: #ecf0f1; color: #7f8c8d; }
+
+        .ocr-status {
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+        .ocr-ceka { background: #ecf0f1; color: #7f8c8d; }
+        .ocr-u_toku { background: #fef5e7; color: #b9770e; }
+        .ocr-zavrseno { background: #d5f4e6; color: #1e8449; }
+        .ocr-greska { background: #fadbd8; color: #a93226; }
+
+        .snippet {
+            background: #fffbea;
+            padding: 8px 12px;
+            border-left: 3px solid #f39c12;
+            margin-top: 8px;
+            font-size: 13px;
+            color: #5d4e1c;
+            border-radius: 3px;
+        }
+
+        /* Preview modal — veći */
+        .modal.veliki {
+            max-width: 900px;
+        }
+        .preview-kontejner {
+            margin-top: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+        }
+        .preview-kontejner iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
+            border-radius: 4px;
+        }
+        .preview-kontejner img {
+            max-width: 100%;
+            max-height: 600px;
+            border-radius: 4px;
+        }
+        .ocr-prikaz {
+            margin-top: 15px;
+            background: #fafafa;
+            border-radius: 6px;
+            padding: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            color: #2c3e50;
+        }
+
+        #login-ekran {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #f5f5f5;
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        #login-ekran.aktivan { display: flex; }
+        .login-kartica {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        .login-kartica h2 { text-align: center; margin-top: 0; }
+        .login-greska {
+            background: #fadbd8;
+            color: #a93226;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            display: none;
+        }
+
+                /* Gantt */
+        #gantt-kontejner {
+            background: white;
+            border-radius: 6px;
+            padding: 10px;
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+        .gantt .bar-wrapper .bar {
+            fill: #3498db;
+        }
+        .gantt .bar-wrapper.status-nije_početo .bar {
+            fill: #bdc3c7;
+        }
+        .gantt .bar-wrapper.status-u_toku .bar {
+            fill: #f39c12;
+        }
+        .gantt .bar-wrapper.status-završeno .bar {
+            fill: #27ae60;
+        }
+        .gantt .bar-wrapper.status-blokirano .bar {
+            fill: #e74c3c;
+        }
+        .gantt .today-highlight {
+            fill: #e74c3c;
+            opacity: 0.15;
+        }
+    </style>
+    <!-- Frappe Gantt — vremenska linija -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css" />
+    <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
+</head>
+<body>
+    <div id="login-ekran">
+        <div class="login-kartica">
+            <h2>🏗️ Kuca App</h2>
+            <p style="text-align: center; color: #7f8c8d; margin-bottom: 20px;">Prijavite se za nastavak</p>
+            
+            <div class="login-greska" id="login-greska"></div>
+            
+            <form id="forma-login">
+                <label>Email</label>
+                <input type="email" id="login-email" required placeholder="tvoj@email.com">
+                
+                <label>Lozinka</label>
+                <input type="password" id="login-lozinka" required placeholder="••••••••">
+                
+                <button type="submit" style="width: 100%; margin-top: 20px; padding: 12px;">Prijavi se</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Ostatak aplikacije -->
+    <div id="glavna-aplikacija" style="display: none;">
+    
+    <button id="btn-instaliraj" style="display:block; position: fixed; bottom: 20px; right: 20px; z-index: 9999; background: #27ae60; padding: 12px 20px; border-radius: 50px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+        📲 Instaliraj aplikaciju
+    </button>
+
+    <!-- Ovde ide ceo tvoj trenutni HTML (h1, kartice, itd.) -->
+    <h1>🏗️ Kuca App</h1>
+    <p class="subtitle">Upravljanje izgradnjom montažne kuće — Melenci</p>
+
+    <div class="card" id="kartica-podsetnici" style="display:none;">
+        <h2>⏰ Podsetnici</h2>
+        <div class="podsetnici-traka" id="podsetnici-traka"></div>
+    </div>
+
+    <div class="card">
+        <h2>Status sistema</h2>
+        <p>Backend: <span id="backend-status">provera...</span></p>
+        <p>Baza: <span id="db-status">provera...</span></p>
+    </div>
+
+    <div class="card">
+        <h2>➕ Dodaj firmu</h2>
+        <form id="forma-firma">
+            <div class="grid-2">
+                <div>
+                    <label>Naziv *</label>
+                    <input type="text" name="naziv" required>
+                </div>
+                <div>
+                    <label>PIB</label>
+                    <input type="text" name="pib">
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <label>Adresa sedišta (koristi se za mapu)</label>
+                    <input type="text" name="adresa_sedista" placeholder="npr. Melenci, Glavna 1">
+                </div>
+                <div>
+                    <label>Adresa proizvodnje</label>
+                    <input type="text" name="adresa_proizvodnje" placeholder="Ako se razlikuje od sedišta">
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <label>Grad</label>
+                    <input type="text" name="grad">
+                </div>
+                <div>
+                    <label>Poštanski broj</label>
+                    <input type="text" name="postanski_broj">
+                </div>
+            </div>
+
+            <input type="hidden" name="latitude" id="forma-lat">
+            <input type="hidden" name="longitude" id="forma-lon">
+
+            <div class="grid-2">
+                <div>
+                    <label>Kontakt osoba</label>
+                    <input type="text" name="kontakt_osoba">
+                </div>
+                <div>
+                    <label>Telefon</label>
+                    <input type="text" name="telefon">
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <label>Email</label>
+                    <input type="email" name="email">
+                </div>
+                <div>
+                    <label>Kategorija</label>
+                    <select name="kategorija">
+                        <option value="izvođač">Izvođač</option>
+                        <option value="projektant">Projektant</option>
+                        <option value="nadzor">Nadzor</option>
+                        <option value="geodeta">Geodeta</option>
+                        <option value="materijal">Materijal</option>
+                    </select>
+                </div>
+            </div>
+
+            <label>Napomena</label>
+            <textarea name="napomena"></textarea>
+
+            <button type="submit">Sačuvaj firmu</button>
+            <span id="poruka-forma" style="margin-left: 15px;"></span>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>📋 Lista firmi</h2>
+        <div style="margin-bottom: 10px;">
+            <input type="text" id="pretraga" placeholder="Pretraga po nazivu..." style="max-width: 300px; display: inline-block;">
+            <select id="filter-kategorija" style="max-width: 200px; display: inline-block;">
+                <option value="">Sve kategorije</option>
+                <option value="izvođač">Izvođač</option>
+                <option value="projektant">Projektant</option>
+                <option value="nadzor">Nadzor</option>
+                <option value="geodeta">Geodeta</option>
+                <option value="materijal">Materijal</option>
+            </select>
+        </div>
+        <div id="lista-firmi">Učitavanje...</div>
+    </div>
+
+    <!-- Modal za detalje firme -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal" id="modal-sadrzaj">
+            <button class="modal-close" onclick="zatvoriModal()">×</button>
+            <div id="modal-body">Učitavanje...</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🏛️ Pravni tok — 8 faza</h2>
+        <p style="color:#7f8c8d; font-size: 14px; margin-top: 0;">
+            Od provere parcele do upotrebne dozvole. Klikni na fazu za detalje.
+        </p>
+        <div id="lista-faza">Učitavanje...</div>
+    </div>
+
+    <div class="card">
+        <h2>📄 Dokumenti</h2>
+
+        <div style="margin-bottom: 15px;">
+            <input type="text" id="pretraga-dokumenata" placeholder="🔍 Pretraga po nazivu, opisu ili tekstu..."
+                   style="width: 100%; padding: 10px; font-size: 15px;">
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <select id="filter-dok-kategorija" style="max-width: 180px; display: inline-block;" onchange="ucitajDokumente()">
+                <option value="">Sve kategorije</option>
+                <option value="dozvola">Dozvole</option>
+                <option value="ugovor">Ugovori</option>
+                <option value="racun">Računi</option>
+                <option value="projekat">Projekti</option>
+                <option value="izjava">Izjave</option>
+                <option value="ostalo">Ostalo</option>
+            </select>
+            <select id="filter-dok-faza" style="max-width: 250px; display: inline-block;" onchange="ucitajDokumente()">
+                <option value="">Sve faze</option>
+            </select>
+            <select id="filter-dok-firma" style="max-width: 200px; display: inline-block;" onchange="ucitajDokumente()">
+                <option value="">Sve firme</option>
+            </select>
+        </div>
+
+        <div class="drop-zona" id="drop-zona" onclick="document.getElementById('input-fajl').click()">
+            <div class="ikona">📤</div>
+            <div class="tekst">
+                <strong>Prevuci fajl ovde</strong> ili klikni da izabereš<br>
+                <small>PDF, slike (JPG, PNG, HEIC), Word, Excel — max 20 MB</small>
+            </div>
+            <div class="fajl-info" id="fajl-info"></div>
+        </div>
+        <input type="file" id="input-fajl" style="display: none;"
+               accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.tiff,.doc,.docx,.xls,.xlsx"
+               onchange="izabranFajl(this.files[0])">
+
+        <form id="forma-dokument" style="display: none;">
+            <div class="grid-2">
+                <div>
+                    <label>Naziv dokumenta *</label>
+                    <input type="text" name="naziv" required placeholder="npr. Građevinska dozvola">
+                </div>
+                <div>
+                    <label>Kategorija</label>
+                    <select name="kategorija">
+                        <option value="dozvola">Dozvola</option>
+                        <option value="ugovor">Ugovor</option>
+                        <option value="racun">Račun</option>
+                        <option value="projekat">Projekat</option>
+                        <option value="izjava">Izjava</option>
+                        <option value="ostalo" selected>Ostalo</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <label>Faza</label>
+                    <select name="faza_id" id="dok-faza">
+                        <option value="">-- Bez faze --</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Firma</label>
+                    <select name="firma_id" id="dok-firma">
+                        <option value="">-- Bez firme --</option>
+                    </select>
+                </div>
+            </div>
+
+            <label>Datum dokumenta</label>
+            <input type="date" name="datum_dokumenta">
+
+            <label>Opis</label>
+            <textarea name="opis" placeholder="Kratak opis sadržaja..."></textarea>
+
+            <button type="submit" id="btn-upload">📤 Upload dokumenta</button>
+            <button type="button" onclick="otkaziUpload()" style="background: #95a5a6; margin-left: 10px;">Otkaži</button>
+            <span id="poruka-dokument" style="margin-left: 15px;"></span>
+        </form>
+
+        <div id="rezultati-pretrage"></div>
+
+        <div id="lista-dokumenata" style="margin-top: 15px;">Učitavanje...</div>
+    </div>
+
+    <div class="card">
+        <h2>💰 Budžet i troškovi</h2>
+
+        <div class="budzet-rezime" id="budzet-rezime">
+            <div class="budzet-kartica">
+                <div class="label">Ukupan budžet</div>
+                <div class="iznos" id="rezime-budzet">—</div>
+            </div>
+            <div class="budzet-kartica zeleno">
+                <div class="label">Potrošeno</div>
+                <div class="iznos" id="rezime-potroseno">—</div>
+            </div>
+            <div class="budzet-kartica" id="kartica-preostalo">
+                <div class="label">Preostalo</div>
+                <div class="iznos" id="rezime-preostalo">—</div>
+            </div>
+            <div class="budzet-kartica" id="kartica-procenat">
+                <div class="label">Iskorišćenje</div>
+                <div class="iznos" id="rezime-procenat">—</div>
+            </div>
+        </div>
+
+        <h3>Po fazama</h3>
+        <div id="budzet-po-fazama">Učitavanje...</div>
+
+        <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
+
+        <h3>➕ Dodaj trošak</h3>
+        <form id="forma-trosak">
+            <div class="grid-2">
+                <div>
+                    <label>Opis *</label>
+                    <input type="text" name="opis" required placeholder="npr. Beton za temelj">
+                </div>
+                <div>
+                    <label>Iznos (RSD) *</label>
+                    <input type="number" name="iznos" required placeholder="npr. 150000">
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <label>Kategorija</label>
+                    <select name="kategorija">
+                        <option value="materijal">Materijal</option>
+                        <option value="radovi">Radovi</option>
+                        <option value="dozvole">Dozvole i takse</option>
+                        <option value="oprema">Oprema</option>
+                        <option value="transport">Transport</option>
+                        <option value="ostalo">Ostalo</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Status</label>
+                    <select name="status">
+                        <option value="planirano">Planirano</option>
+                        <option value="naručeno">Naručeno</option>
+                        <option value="plaćeno" selected>Plaćeno</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <label>Datum troška *</label>
+                    <input type="date" name="datum_troska" required id="trosak-datum">
+                </div>
+                <div>
+                    <label>Datum plaćanja</label>
+                    <input type="date" name="datum_placanja">
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <label>Faza</label>
+                    <select name="faza_id" id="trosak-faza">
+                        <option value="">-- Bez faze --</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Firma</label>
+                    <select name="firma_id" id="trosak-firma">
+                        <option value="">-- Bez firme --</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <label>Broj dokumenta</label>
+                    <input type="text" name="broj_dokumenta" placeholder="npr. Faktura 123/2026">
+                </div>
+                <div>
+                    <label>Napomena</label>
+                    <input type="text" name="napomena">
+                </div>
+            </div>
+
+            <button type="submit">Sačuvaj trošak</button>
+            <span id="poruka-trosak" style="margin-left: 15px;"></span>
+        </form>
+
+        <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
+
+        <h3>📋 Lista troškova</h3>
+        <div style="margin-bottom: 10px;">
+            <select id="filter-trosak-faza" style="max-width: 250px; display: inline-block;">
+                <option value="">Sve faze</option>
+            </select>
+            <select id="filter-trosak-status" style="max-width: 150px; display: inline-block;">
+                <option value="">Svi statusi</option>
+                <option value="planirano">Planirano</option>
+                <option value="naručeno">Naručeno</option>
+                <option value="plaćeno">Plaćeno</option>
+            </select>
+        </div>
+        <div id="lista-troskova">Učitavanje...</div>
+    </div>
+
+    <div class="card">
+        <h2>🧱 Materijali i ponude</h2>
+
+        <h3>➕ Dodaj materijal</h3>
+        <form id="forma-materijal">
+            <div class="grid-2">
+                <div>
+                    <label>Naziv *</label>
+                    <input type="text" name="naziv" required placeholder="npr. Beton MB30">
+                </div>
+                <div>
+                    <label>Jedinica mere</label>
+                    <select name="jedinica">
+                        <option value="kom">kom</option>
+                        <option value="m3">m³</option>
+                        <option value="m2">m²</option>
+                        <option value="m">m</option>
+                        <option value="kg">kg</option>
+                        <option value="t">t</option>
+                        <option value="l">l</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid-2">
+                <div>
+                    <label>Kategorija</label>
+                    <input type="text" name="kategorija" placeholder="npr. Beton, Zidarski">
+                </div>
+                <div>
+                    <label>Opis</label>
+                    <input type="text" name="opis">
+                </div>
+            </div>
+            <button type="submit">Sačuvaj materijal</button>
+            <span id="poruka-materijal" style="margin-left: 15px;"></span>
+        </form>
+
+        <hr style="margin: 20px 0;">
+
+        <h3>📋 Lista materijala</h3>
+        <div id="lista-materijala">Učitavanje...</div>
+    </div>
+
+    <div class="card">
+        <h2>💵 Kapital i finansije</h2>
+
+        <div class="kapital-rezime" id="kapital-rezime">
+            <div class="kapital-kartica plavo">
+                <div class="label">Ukupan kapital</div>
+                <div class="iznos" id="kap-ukupno">—</div>
+            </div>
+            <div class="kapital-kartica zeleno">
+                <div class="label">Ukupno potrošeno</div>
+                <div class="iznos" id="kap-potroseno">—</div>
+            </div>
+            <div class="kapital-kartica" id="kap-kartica-preostalo">
+                <div class="label">Preostalo</div>
+                <div class="iznos" id="kap-preostalo">—</div>
+            </div>
+            <div class="kapital-kartica narandzasto">
+                <div class="label">Planiran budžet</div>
+                <div class="iznos" id="kap-budzet">—</div>
+                <div class="pod" id="kap-razlika">—</div>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 5px; font-size: 13px; color: #7f8c8d;">
+            Iskorišćenost kapitala
+        </div>
+        <div class="kapital-progress">
+            <div class="kapital-progress-fill" id="kap-progress" style="width: 0%;">0%</div>
+        </div>
+
+        <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
+
+        <h3>➕ Dodaj kapital</h3>
+        <form id="forma-kapital">
+            <div class="grid-2">
+                <div>
+                    <label>Naziv izvora *</label>
+                    <input type="text" name="naziv" required placeholder="npr. Ušteđevina, Kredit banke">
+                </div>
+                <div>
+                    <label>Iznos (RSD) *</label>
+                    <input type="number" name="iznos" required placeholder="npr. 5000000">
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <label>Kategorija</label>
+                    <select name="kategorija">
+                        <option value="usteda" selected>Ušteđevina</option>
+                        <option value="kredit">Kredit</option>
+                        <option value="pomoc">Pomoć</option>
+                        <option value="prodaja">Prodaja imovine</option>
+                        <option value="ostalo">Ostalo</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Datum *</label>
+                    <input type="date" name="datum" required id="kapital-datum">
+                </div>
+            </div>
+
+            <label>Napomena</label>
+            <input type="text" name="napomena" placeholder="npr. Kamata 3.5% godišnje">
+
+            <button type="submit">Sačuvaj kapital</button>
+            <span id="poruka-kapital" style="margin-left: 15px;"></span>
+        </form>
+
+        <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
+
+        <h3>📋 Lista izvora kapitala</h3>
+        <div id="lista-kapitala">Učitavanje...</div>
+    </div>
+
+    <div class="card">
+        <h2>📊 Vremenska linija (Gantt)</h2>
+        <p style="color:#7f8c8d; font-size:13px; margin-top:0;">
+            Planirani i stvarni datumi faza. Crvena linija je danas.
+        </p>
+        
+        <div style="margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+            <button onclick="promeniSkaluGantt('Day')" class="btn-sekundarno" style="margin:0; padding:5px 12px; font-size:13px;">Dani</button>
+            <button onclick="promeniSkaluGantt('Week')" class="btn-sekundarno" style="margin:0; padding:5px 12px; font-size:13px;">Nedelje</button>
+            <button onclick="promeniSkaluGantt('Month')" class="btn-sekundarno" style="margin:0; padding:5px 12px; font-size:13px;">Meseci</button>
+        </div>
+
+        <div id="gantt-kontejner">
+            <div id="gantt-mesto" style="width: 100%; min-height: 200px;">Učitavanje...</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>⏰ Svi podsetnici</h2>
+
+        <div style="padding: 12px; background: #eaf2f8; border-radius: 6px; margin-bottom: 15px;">
+            <strong>🔔 Notifikacije</strong>
+            <p style="margin: 5px 0; font-size: 13px; color: #2c3e50;">
+                Status: <span id="push-status">provera...</span>
+            </p>
+            <button type="button" id="btn-push" onclick="ukljuciPush()" style="background:#27ae60; margin: 0;">
+                🔔 Uključi notifikacije
+            </button>
+            <button type="button" onclick="testNotifikacije()" style="background:#e67e22; margin-left: 10px;">
+                📤 Pošalji test
+            </button>
+            <span id="push-poruka" style="margin-left: 10px; font-size: 13px;"></span>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label style="display:inline-block; margin:0; font-size:14px;">
+                <input type="checkbox" id="filter-zavrseni" style="width:auto; margin-right:5px;" onchange="ucitajPodsetnike()">
+                Prikaži završene
+            </label>
+            <select id="filter-podsetnik-kategorija" style="max-width:200px; display:inline-block; margin-left:15px;" onchange="ucitajPodsetnike()">
+                <option value="">Sve kategorije</option>
+                <option value="zakonski">Zakonski</option>
+                <option value="ugovor">Ugovor</option>
+                <option value="licenca">Licenca</option>
+                <option value="placanje">Plaćanje</option>
+                <option value="opste">Opšte</option>
+            </select>
+        </div>
+
+        <h3>➕ Dodaj podsetnik</h3>
+        <form id="forma-podsetnik">
+            <div class="grid-2">
+                <div>
+                    <label>Naslov *</label>
+                    <input type="text" name="naslov" required placeholder="npr. Pozovi izvođača za ponudu">
+                </div>
+                <div>
+                    <label>Datum dospeća *</label>
+                    <input type="date" name="datum_dospeca" required id="podsetnik-datum">
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <label>Prioritet</label>
+                    <select name="prioritet">
+                        <option value="nisko">Nisko</option>
+                        <option value="srednje" selected>Srednje</option>
+                        <option value="visoko">Visoko</option>
+                        <option value="hitno">Hitno</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Kategorija</label>
+                    <select name="kategorija">
+                        <option value="opste" selected>Opšte</option>
+                        <option value="zakonski">Zakonski</option>
+                        <option value="ugovor">Ugovor</option>
+                        <option value="licenca">Licenca</option>
+                        <option value="placanje">Plaćanje</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <label>Faza</label>
+                    <select name="faza_id" id="podsetnik-faza">
+                        <option value="">-- Bez faze --</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Firma</label>
+                    <select name="firma_id" id="podsetnik-firma">
+                        <option value="">-- Bez firme --</option>
+                    </select>
+                </div>
+            </div>
+
+            <label>Opis</label>
+            <textarea name="opis" placeholder="Detalji podsetnika..."></textarea>
+
+            <button type="submit">Sačuvaj podsetnik</button>
+            <button type="button" onclick="generisiZakonske()" style="background:#e67e22; margin-left:10px;">⚙️ Generiši zakonske</button>
+            <span id="poruka-podsetnik" style="margin-left: 15px;"></span>
+        </form>
+
+        <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
+
+        <h3>📋 Lista podsetnika</h3>
+        <div id="lista-podsetnika">Učitavanje...</div>
+    </div>
+
+    <script>
+
+        const API = '';
+        
+        const STATUS_NAZIVI = {
+            'nije_početo': 'Nije početo',
+            'u_toku': 'U toku',
+            'završeno': 'Završeno',
+            'blokirano': 'Blokirano',
+        };
+
+        let trenutnaFaza = null;
+
+        // ===== AUTENTIFIKACIJA =====
+        
+        const token = localStorage.getItem('kuca_token');
+        
+        // Presreći sve fetch pozive da dodaju Authorization header
+        const originalFetch = window.fetch;
+        window.fetch = async function(...args) {
+            const [resource, config] = args;
+            if (typeof resource === 'string' && resource.startsWith('/api/') && !resource.includes('/api/auth/login')) {
+                if (!config) args[1] = {};
+                if (!args[1].headers) args[1].headers = {};
+                args[1].headers['Authorization'] = `Bearer ${token}`;
+            }
+            const response = await originalFetch(...args);
+            if (response.status === 401 && !resource.includes('/api/auth/login')) {
+                odjaviSe(); // Ako token istekne, izbaci na login
+            }
+            return response;
+        };
+
+        function proveriPrijavu() {
+            if (token) {
+                document.getElementById('login-ekran').style.display = 'none';
+                document.getElementById('glavna-aplikacija').style.display = 'block';
+                // Ovde pozovi sve funkcije za učitavanje (ucitajFirme, ucitajFaze, itd.)
+                // ... (pogledaj dole u Koraku 1.8)
+            } else {
+                document.getElementById('login-ekran').style.display = 'flex';
+                document.getElementById('glavna-aplikacija').style.display = 'none';
+            }
+        }
+
+        function odjaviSe() {
+            localStorage.removeItem('kuca_token');
+            window.location.reload();
+        }
+
+        document.getElementById('forma-login').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const lozinka = document.getElementById('login-lozinka').value;
+            const greska = document.getElementById('login-greska');
+            
+            // OAuth2 zahteva form-urlencoded format, ne JSON
+            const formData = new URLSearchParams();
+            formData.append('username', email);
+            formData.append('password', lozinka);
+
+            try {
+                const res = await originalFetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    localStorage.setItem('kuca_token', data.access_token);
+                    window.location.reload();
+                } else {
+                    greska.textContent = 'Pogrešan email ili lozinka.';
+                    greska.style.display = 'block';
+                }
+            } catch (err) {
+                greska.textContent = 'Greška u komunikaciji sa serverom.';
+                greska.style.display = 'block';
+            }
+        });
+
+        // Na samom dnu, zameni trenutno "Inicijalno učitavanje"
+        proveriPrijavu();
+
+        // Provera statusa
+        async function proveriStatus() {
+            try {
+                const r = await fetch(`${API}/api/health`);
+                const data = await r.json();
+                const el = document.getElementById('backend-status');
+                el.textContent = '✅ ' + data.status;
+                el.className = 'status-ok';
+            } catch (e) {
+                const el = document.getElementById('backend-status');
+                el.textContent = '❌ nedostupan';
+                el.className = 'status-error';
+            }
+
+            try {
+                const r = await fetch(`${API}/api/db-check`);
+                const data = await r.json();
+                const el = document.getElementById('db-status');
+                if (data.db === 'ok') {
+                    el.textContent = '✅ povezana';
+                    el.className = 'status-ok';
+                } else {
+                    el.textContent = '⚠️ ' + data.db;
+                    el.className = 'status-error';
+                }
+            } catch (e) {
+                const el = document.getElementById('db-status');
+                el.textContent = '❌ greška';
+                el.className = 'status-error';
+            }
+        }
+
+        // Učitavanje liste firmi
+        async function ucitajFirme() {
+            const pretraga = document.getElementById('pretraga').value;
+            const kategorija = document.getElementById('filter-kategorija').value;
+
+            const params = new URLSearchParams();
+            if (pretraga) params.append('pretraga', pretraga);
+            if (kategorija) params.append('kategorija', kategorija);
+
+            const r = await fetch(`${API}/api/firme/?${params}`);
+            const firme = await r.json();
+
+            const div = document.getElementById('lista-firmi');
+
+            if (firme.length === 0) {
+                div.innerHTML = '<p style="color:#7f8c8d;">Nema firmi. Dodaj prvu pomoću forme iznad.</p>';
+                return;
+            }
+
+            let html = '<table><thead><tr><th>Naziv</th><th>Kategorija</th><th>Kontakt</th><th>Ocena</th><th>Status</th><th></th></tr></thead><tbody>';
+            for (const f of firme) {
+                const badgeClass = f.verifikovano === 'verifikovano' ? 'badge-verifikovano' : 'badge-neverifikovano';
+                const zvezdice = f.ocena ? '⭐'.repeat(f.ocena) : '<span style="color:#ddd;">—</span>';
+                html += `<tr class="klikabilan" onclick="otvoriModal(${f.id})">
+                    <td>
+                        <strong>${f.naziv}</strong>
+                        ${f.uneo_ime ? `<br><small style="color:#7f8c8d;">👤 Uneо: ${f.uneo_ime}</small>` : ''}
+                        ${f.grad ? `<br><small style="color:#7f8c8d;">📍 <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((f.adresa_sedista || '') + ', ' + f.grad)}" target="_blank" style="color:#3498db; text-decoration:none;">${f.grad} (Otvori u Mapama)</a></small>` : ''}
+                        ${f.adresa_proizvodnje ? '<br><small style="color:#7f8c8d;">🏭 ' + f.adresa_proizvodnje + '</small>' : ''}
+                    </td>
+                    <td>${f.kategorija}</td>
+                    <td>${f.kontakt_osoba || ''}${f.telefon ? '<br><small>' + f.telefon + '</small>' : ''}</td>
+                    <td>${zvezdice}</td>
+                    <td><span class="badge ${badgeClass}">${f.verifikovano}</span></td>
+                    <td onclick="event.stopPropagation();"><button class="danger" onclick="obrisiFirmu(${f.id})">Obriši</button></td>
+                </tr>`;
+            }
+            html += '</tbody></table>';
+            div.innerHTML = html;
+        }
+
+        // ===== VEZE FAZA-FIRMA =====
+
+        const ULOGE_NAZIVI = {
+            'glavni_izvodjac': 'Glavni izvođač',
+            'podizvodjac': 'Podizvođač',
+            'projektant': 'Projektant',
+            'nadzor': 'Nadzor',
+            'geodeta': 'Geodeta',
+            'dobavljac': 'Dobavljač',
+            'ostalo': 'Ostalo',
+        };
+
+        async function ucitajFirmeFaze(fazaId) {
+            const div = document.getElementById('faze-firme');
+            if (!div) return;
+
+            const r = await fetch(`${API}/api/veze/faza/${fazaId}`);
+            const veze = await r.json();
+
+            if (veze.length === 0) {
+                div.innerHTML = '<p style="color:#7f8c8d; font-size:14px;">Još nema angažovanih firmi u ovoj fazi.</p>';
+            } else {
+                let html = '<table style="margin-top:5px;"><thead><tr><th>Firma</th><th>Uloga</th><th>Cena</th><th></th></tr></thead><tbody>';
+                for (const v of veze) {
+                    html += `<tr>
+                        <td>
+                            <strong>${v.firma_naziv}</strong>
+                            ${v.firma_kontakt ? '<br><small>' + v.firma_kontakt + '</small>' : ''}
+                            ${v.firma_telefon ? '<br><small>' + v.firma_telefon + '</small>' : ''}
+                        </td>
+                        <td>${ULOGE_NAZIVI[v.uloga] || v.uloga}</td>
+                        <td>${v.cena ? v.cena.toLocaleString('sr-RS') + ' RSD' : '—'}</td>
+                        <td><button class="danger" onclick="obrisiVezu(${v.id})">Ukloni</button></td>
+                    </tr>`;
+                }
+                html += '</tbody></table>';
+                div.innerHTML = html;
+            }
+
+            // Napuni select sa firmama koje već nisu u fazi
+            await napuniSelectFirmi(fazaId, veze.map(v => v.firma_id));
+        }
+
+        async function napuniSelectFirmi(fazaId, iskoriscene) {
+            const r = await fetch(`${API}/api/firme/`);
+            const firme = await r.json();
+            const select = document.getElementById('dodaj-firmu-select');
+            if (!select) return;
+
+            select.innerHTML = '<option value="">-- Izaberi firmu --</option>';
+            for (const f of firme) {
+                if (iskoriscene.includes(f.id)) continue;
+                const opt = document.createElement('option');
+                opt.value = f.id;
+                opt.textContent = `${f.naziv} (${f.kategorija})`;
+                select.appendChild(opt);
+            }
+        }
+
+        async function dodajFirmuUFazu() {
+            if (!trenutnaFaza) return;
+            const firmaId = document.getElementById('dodaj-firmu-select').value;
+            const uloga = document.getElementById('dodaj-firmu-uloga').value;
+            const cenaStr = document.getElementById('dodaj-firmu-cena').value;
+            const poruka = document.getElementById('poruka-veza');
+
+            if (!firmaId) {
+                poruka.textContent = '❌ Izaberi firmu';
+                poruka.style.color = '#e74c3c';
+                return;
+            }
+
+            const podaci = {
+                firma_id: parseInt(firmaId),
+                uloga: uloga,
+            };
+            if (cenaStr) podaci.cena = parseInt(cenaStr);
+
+            const r = await fetch(`${API}/api/veze/faza/${trenutnaFaza.id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(podaci)
+            });
+
+            if (r.ok) {
+                poruka.textContent = '✅ Dodato';
+                poruka.style.color = '#27ae60';
+                document.getElementById('dodaj-firmu-cena').value = '';
+                await ucitajFirmeFaze(trenutnaFaza.id);
+                setTimeout(() => poruka.textContent = '', 2000);
+            } else {
+                const err = await r.json();
+                poruka.textContent = '❌ ' + (err.detail || 'Greška');
+                poruka.style.color = '#e74c3c';
+            }
+        }
+
+        async function obrisiVezu(vezaId) {
+            if (!confirm('Ukloniti ovu firmu iz faze?')) return;
+            await fetch(`${API}/api/veze/${vezaId}`, { method: 'DELETE' });
+            await ucitajFirmeFaze(trenutnaFaza.id);
+        }
+
+        // Dodavanje firme
+        document.getElementById('forma-firma').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const forma = e.target;
+            const podaci = Object.fromEntries(new FormData(forma));
+
+            // Ukloni prazna polja (da ne budu prazni stringovi u bazi)
+            for (const k in podaci) {
+                if (podaci[k] === '') delete podaci[k];
+            }
+
+            const poruka = document.getElementById('poruka-forma');
+            try {
+                const r = await fetch(`${API}/api/firme/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(podaci)
+                });
+                if (r.ok) {
+                    poruka.textContent = '✅ Sačuvano!';
+                    poruka.style.color = '#27ae60';
+                    forma.reset();
+                    ucitajFirme();
+                    setTimeout(() => poruka.textContent = '', 3000);
+                } else {
+                    const err = await r.json();
+                    poruka.textContent = '❌ ' + JSON.stringify(err);
+                    poruka.style.color = '#e74c3c';
+                }
+            } catch (e) {
+                poruka.textContent = '❌ Greška: ' + e.message;
+                poruka.style.color = '#e74c3c';
+            }
+        });
+
+        // Brisanje firme
+        async function obrisiFirmu(id) {
+            if (!confirm('Sigurno obrisati ovu firmu?')) return;
+            await fetch(`${API}/api/firme/${id}`, { method: 'DELETE' });
+            ucitajFirme();
+        }
+
+        function popuniMojuLokaciju() {
+            const status = document.getElementById('lokacija-status');
+            if (!navigator.geolocation) {
+                status.textContent = '❌ Geolokacija nije podržana';
+                status.style.color = '#e74c3c';
+                return;
+            }
+            status.textContent = '⏳ Tražim lokaciju...';
+            status.style.color = '#7f8c8d';
+
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    document.getElementById('forma-lat').value = pos.coords.latitude.toFixed(6);
+                    document.getElementById('forma-lon').value = pos.coords.longitude.toFixed(6);
+                    status.textContent = `✅ ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
+                    status.style.color = '#27ae60';
+                },
+                (err) => {
+                    status.textContent = '❌ ' + err.message;
+                    status.style.color = '#e74c3c';
+                }
+            );
+        }
+
+        // Filteri
+        document.getElementById('pretraga').addEventListener('input', ucitajFirme);
+        document.getElementById('filter-kategorija').addEventListener('change', ucitajFirme);
+
+        // ===== MODAL ZA DETALJE =====
+
+        let trenutnaFirma = null;
+
+        async function otvoriModal(id) {
+            const r = await fetch(`${API}/api/firme/${id}`);
+            if (!r.ok) return;
+            trenutnaFirma = await r.json();
+
+            const f = trenutnaFirma;
+            const zvezdiceHtml = [1,2,3,4,5].map(n =>
+                `<span class="${n <= (f.ocena || 0) ? 'aktivna' : ''}" onclick="postaviOcenu(${n})">★</span>`
+            ).join('');
+
+            const badgeClass = f.verifikovano === 'verifikovano' ? 'badge-verifikovano' : 'badge-neverifikovano';
+            const btnVerifikuj = f.verifikovano === 'verifikovano'
+                ? '<button class="btn-neverifikuj" onclick="toggleVerifikacija()">↺ Označi kao neverifikovano</button>'
+                : '<button class="btn-verifikuj" onclick="toggleVerifikacija()">✓ Verifikuj firmu</button>';
+
+            document.getElementById('modal-body').innerHTML = `
+                <h2>${f.naziv}</h2>
+                <p><span class="badge ${badgeClass}">${f.verifikovano}</span></p>
+
+                <div class="detalj-red"><div class="label">Kategorija</div><div class="vrednost">${f.kategorija}</div></div>
+                ${f.pib ? `<div class="detalj-red"><div class="label">PIB</div><div class="vrednost">${f.pib}</div></div>` : ''}
+                ${f.adresa_sedista ? `<div class="detalj-red"><div class="label">Sedište</div><div class="vrednost">${f.adresa_sedista}</div></div>` : ''}
+                ${f.adresa_proizvodnje ? `<div class="detalj-red"><div class="label">Proizvodnja</div><div class="vrednost">${f.adresa_proizvodnje}</div></div>` : ''}
+                ${f.kontakt_osoba ? `<div class="detalj-red"><div class="label">Kontakt osoba</div><div class="vrednost">${f.kontakt_osoba}</div></div>` : ''}
+                ${f.telefon ? `<div class="detalj-red"><div class="label">Telefon</div><div class="vrednost">${f.telefon}</div></div>` : ''}
+                ${f.email ? `<div class="detalj-red"><div class="label">Email</div><div class="vrednost">${f.email}</div></div>` : ''}
+                ${f.broj_licence ? `<div class="detalj-red"><div class="label">Broj licence</div><div class="vrednost">${f.broj_licence}</div></div>` : ''}
+
+                <div class="detalj-red">
+                    <div class="label">Ocena</div>
+                    <div class="vrednost"><div class="zvezdice">${zvezdiceHtml}</div></div>
+                </div>
+
+                <label style="margin-top:15px;">Beleške o saradnji</label>
+                <textarea id="modal-beleske" placeholder="Utisci, problemi, reference...">${f.beleške_saradnje || ''}</textarea>
+
+                <div class="modal-akcije">
+                    ${btnVerifikuj}
+                    <button class="btn-sekundarno" onclick="sacuvajBeleške()">💾 Sačuvaj beleške</button>
+                </div>
+            `;
+
+            document.getElementById('modal-overlay').classList.add('aktivan');
+        }
+
+        function zatvoriModal() {
+            document.getElementById('modal-overlay').classList.remove('aktivan');
+            trenutnaFirma = null;
+        }
+
+        async function postaviOcenu(n) {
+            if (!trenutnaFirma) return;
+            await fetch(`${API}/api/firme/${trenutnaFirma.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ocena: n })
+            });
+            trenutnaFirma.ocena = n;
+            // Osveži zvezdice u modalu
+            const zvezdice = document.querySelectorAll('.zvezdice span');
+            zvezdice.forEach((el, i) => {
+                el.className = i < n ? 'aktivna' : '';
+            });
+            // Osveži listu u pozadini
+            ucitajFirme();
+        }
+
+        async function toggleVerifikacija() {
+            if (!trenutnaFirma) return;
+            await fetch(`${API}/api/firme/${trenutnaFirma.id}/verifikuj`, { method: 'POST' });
+            otvoriModal(trenutnaFirma.id);  // osveži modal
+            ucitajFirme();                   // osveži listu
+        }
+
+        async function sacuvajBeleške() {
+            if (!trenutnaFirma) return;
+            const beleške = document.getElementById('modal-beleske').value;
+            await fetch(`${API}/api/firme/${trenutnaFirma.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ beleške_saradnje: beleške })
+            });
+            alert('Beleške sačuvane!');
+        }
+
+        async function postaviLokacijuFirme() {
+            if (!trenutnaFirma) return;
+
+            const status = prompt('Unesi GPS koordinate kao "lat,lon" (npr. 45.5189,20.3167)\n\nIli klikni OK bez unosa da koristiš trenutnu lokaciju:');
+
+            if (status === null) return;  // otkazano
+
+            let lat, lon;
+            if (status.trim() === '') {
+                // Koristi trenutnu lokaciju
+                if (!navigator.geolocation) {
+                    alert('Geolokacija nije podržana.');
+                    return;
+                }
+                await new Promise((resolve) => {
+                    navigator.geolocation.getCurrentPosition(
+                        async (pos) => {
+                            lat = pos.coords.latitude;
+                            lon = pos.coords.longitude;
+                            await sacuvajLokaciju(lat, lon);
+                            resolve();
+                        },
+                        (err) => {
+                            alert('Greška: ' + err.message);
+                            resolve();
+                        }
+                    );
+                });
+            } else {
+                // Parsiraj "lat,lon"
+                const delovi = status.split(',').map(s => parseFloat(s.trim()));
+                if (delovi.length !== 2 || isNaN(delovi[0]) || isNaN(delovi[1])) {
+                    alert('Neispravan format. Primer: 45.5189,20.3167');
+                    return;
+                }
+                lat = delovi[0];
+                lon = delovi[1];
+                await sacuvajLokaciju(lat, lon);
+            }
+        }
+
+        async function sacuvajLokaciju(lat, lon) {
+            await fetch(`${API}/api/firme/${trenutnaFirma.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    latitude: lat,
+                    longitude: lon,
+                })
+            });
+            alert(`✅ GPS postavljen: ${lat.toFixed(4)}, ${lon.toFixed(4)}`);
+            await otvoriModal(trenutnaFirma.id);  // osveži modal
+            ucitajFirme();
+            osveziMapu();                          // osveži mapu
+        }
+
+        // Zatvori modal klikom van njega ili pritiskom Escape
+        document.getElementById('modal-overlay').addEventListener('click', (e) => {
+            if (e.target.id === 'modal-overlay') zatvoriModal();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') zatvoriModal();
+        });
+
+        // ===== FAZE =====
+
+        async function ucitajFaze() {
+            const r = await fetch(`${API}/api/faze/`);
+            const faze = await r.json();
+            const div = document.getElementById('lista-faza');
+
+            if (faze.length === 0) {
+                div.innerHTML = '<p>Nema faza u bazi.</p>';
+                return;
+            }
+
+            let html = '';
+            for (const f of faze) {
+                const ukupno = f.dokumenti.length;
+                const zavrseno = f.dokumenti.filter(d => d.zavrseno).length;
+                const procenat = ukupno > 0 ? Math.round((zavrseno / ukupno) * 100) : 0;
+
+                html += `
+                    <div class="faza-kartica status-${f.status}" onclick="otvoriFazu(${f.id})">
+                        <div class="faza-header">
+                            <div>
+                                <span class="faza-broj">${f.redni_broj}</span>
+                                <span class="faza-naziv">${f.naziv}</span>
+                            </div>
+                            <span class="faza-status status-badge-${f.status}">${STATUS_NAZIVI[f.status]}</span>
+                        </div>
+                        <div class="faza-opis">${f.opis || ''}</div>
+                        <div class="faza-progress">
+                            Dokumenti: ${zavrseno}/${ukupno}
+                            <div class="progress-bar"><div class="progress-fill" style="width:${procenat}%"></div></div>
+                        </div>
+                    </div>
+                `;
+            }
+            div.innerHTML = html;
+        }
+
+        async function otvoriFazu(id) {
+            const r = await fetch(`${API}/api/faze/${id}`);
+            if (!r.ok) return;
+            trenutnaFaza = await r.json();
+            const f = trenutnaFaza;
+
+            const statusOpcije = Object.entries(STATUS_NAZIVI).map(([k, v]) =>
+                `<option value="${k}" ${f.status === k ? 'selected' : ''}>${v}</option>`
+            ).join('');
+
+            const dokumentiHtml = f.dokumenti.map((d, i) => `
+                <div style="display:flex; align-items:center; padding:6px 0; border-bottom:1px solid #f0f0f0;">
+                    <input type="checkbox" ${d.zavrseno ? 'checked' : ''}
+                           onchange="toggleDokument(${i})"
+                           style="width:auto; margin-right:10px;">
+                    <span style="${d.zavrseno ? 'text-decoration:line-through; color:#7f8c8d;' : ''}">${d.naziv}</span>
+                </div>
+            `).join('');
+
+            document.getElementById('modal-body').innerHTML = `
+                <h2>${f.redni_broj}. ${f.naziv}</h2>
+                <p style="color:#7f8c8d;">${f.opis || ''}</p>
+
+                <label>Status</label>
+                <select id="faza-status" onchange="promeniStatus(this.value)">
+                    ${statusOpcije}
+                </select>
+
+                <div class="grid-2" style="margin-top:15px;">
+                    <div>
+                        <label>Planirani početak</label>
+                        <input type="date" id="faza-plan-pocetak" value="${f.planirani_pocetak || ''}"
+                               onchange="sacuvajDatume()">
+                    </div>
+                    <div>
+                        <label>Planirani kraj</label>
+                        <input type="date" id="faza-plan-kraj" value="${f.planirani_kraj || ''}"
+                               onchange="sacuvajDatume()">
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div>
+                        <label>Stvarni početak</label>
+                        <input type="date" id="faza-stvarni-pocetak" value="${f.stvarni_pocetak || ''}"
+                               onchange="sacuvajDatume()">
+                    </div>
+                    <div>
+                        <label>Stvarni kraj</label>
+                        <input type="date" id="faza-stvarni-kraj" value="${f.stvarni_kraj || ''}"
+                               onchange="sacuvajDatume()">
+                    </div>
+                </div>
+
+                <label style="margin-top:15px;">Dokumenti (čeklista)</label>
+                <div>${dokumentiHtml}</div>
+
+                <label style="margin-top:15px;">Napomena</label>
+                <textarea id="faza-napomena" placeholder="Beleške o fazi...">${f.napomena || ''}</textarea>
+                <button class="btn-sekundarno" onclick="sacuvajNapomenu()" style="margin-top:10px;">💾 Sačuvaj napomenu</button>
+
+                                <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
+
+                <h3 style="margin-top: 0;">👷 Angažovane firme</h3>
+                <div id="faze-firme">Učitavanje...</div>
+
+                <div style="margin-top: 15px; padding: 12px; background: #f8f9fa; border-radius: 6px;">
+                    <label>Dodaj firmu u ovu fazu</label>
+                    <select id="dodaj-firmu-select" style="margin-top: 5px;">
+                        <option value="">-- Izaberi firmu --</option>
+                    </select>
+                    <div class="grid-2" style="margin-top: 8px;">
+                        <div>
+                            <label>Uloga</label>
+                            <select id="dodaj-firmu-uloga">
+                                <option value="glavni_izvodjac">Glavni izvođač</option>
+                                <option value="podizvodjac">Podizvođač</option>
+                                <option value="projektant">Projektant</option>
+                                <option value="nadzor">Nadzor</option>
+                                <option value="geodeta">Geodeta</option>
+                                <option value="dobavljac">Dobavljač materijala</option>
+                                <option value="ostalo" selected>Ostalo</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Cena (RSD, opciono)</label>
+                            <input type="number" id="dodaj-firmu-cena" placeholder="npr. 500000">
+                        </div>
+                    </div>
+                    <button onclick="dodajFirmuUFazu()" style="margin-top: 10px;">+ Dodaj firmu</button>
+                    <span id="poruka-veza" style="margin-left: 10px; font-size: 13px;"></span>
+                </div>
+            `;
+
+            document.getElementById('modal-overlay').classList.add('aktivan');
+            await ucitajFirmeFaze(f.id);
+        }
+
+        async function promeniStatus(noviStatus) {
+            if (!trenutnaFaza) return;
+            await fetch(`${API}/api/faze/${trenutnaFaza.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: noviStatus })
+            });
+            trenutnaFaza.status = noviStatus;
+            ucitajFaze();
+        }
+
+        async function toggleDokument(indeks) {
+            if (!trenutnaFaza) return;
+            trenutnaFaza.dokumenti[indeks].zavrseno = !trenutnaFaza.dokumenti[indeks].zavrseno;
+            await fetch(`${API}/api/faze/${trenutnaFaza.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ dokumenti: trenutnaFaza.dokumenti })
+            });
+            otvoriFazu(trenutnaFaza.id);  // osveži modal
+            ucitajFaze();                  // osveži listu
+        }
+
+        async function sacuvajDatume() {
+            if (!trenutnaFaza) return;
+            const podaci = {
+                planirani_pocetak: document.getElementById('faza-plan-pocetak').value || null,
+                planirani_kraj: document.getElementById('faza-plan-kraj').value || null,
+                stvarni_pocetak: document.getElementById('faza-stvarni-pocetak').value || null,
+                stvarni_kraj: document.getElementById('faza-stvarni-kraj').value || null,
+            };
+            await fetch(`${API}/api/faze/${trenutnaFaza.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(podaci)
+            });
+            ucitajFaze();
+            ucitajGantt();
+        }
+
+        async function sacuvajNapomenu() {
+            if (!trenutnaFaza) return;
+            const napomena = document.getElementById('faza-napomena').value;
+            await fetch(`${API}/api/faze/${trenutnaFaza.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ napomena })
+            });
+            alert('Napomena sačuvana!');
+        }
+
+        // ===== BUDŽET I TROŠKOVI =====
+
+        const KATEGORIJE_TROSKA = {
+            'materijal': 'Materijal',
+            'radovi': 'Radovi',
+            'dozvole': 'Dozvole',
+            'oprema': 'Oprema',
+            'transport': 'Transport',
+            'ostalo': 'Ostalo',
+        };
+
+        const STATUS_TROSKA = {
+            'planirano': 'Planirano',
+            'naručeno': 'Naručeno',
+            'plaćeno': 'Plaćeno',
+        };
+
+        function formatRSD(iznos) {
+            return new Intl.NumberFormat('sr-RS').format(iznos) + ' RSD';
+        }
+
+        async function ucitajRezime() {
+            const r = await fetch(`${API}/api/troskovi/rezime/`);
+            const rezime = await r.json();
+
+            document.getElementById('rezime-budzet').textContent = formatRSD(rezime.ukupan_budzet);
+            document.getElementById('rezime-potroseno').textContent = formatRSD(rezime.ukupni_troskovi);
+            document.getElementById('rezime-preostalo').textContent = formatRSD(rezime.preostalo);
+            document.getElementById('rezime-procenat').textContent = rezime.procenat_iskoriscenja + '%';
+
+            // Boja za preostalo
+            const karticaPreostalo = document.getElementById('kartica-preostalo');
+            if (rezime.preostalo < 0) {
+                karticaPreostalo.className = 'budzet-kartica crveno';
+            } else {
+                karticaPreostalo.className = 'budzet-kartica zeleno';
+            }
+
+            // Boja za procenat
+            const karticaProcenat = document.getElementById('kartica-procenat');
+            if (rezime.procenat_iskoriscenja > 100) {
+                karticaProcenat.className = 'budzet-kartica crveno';
+            } else if (rezime.procenat_iskoriscenja > 80) {
+                karticaProcenat.className = 'budzet-kartica';
+                karticaProcenat.style.background = 'linear-gradient(135deg, #f39c12 0%, #f7b731 100%)';
+            } else {
+                karticaProcenat.className = 'budzet-kartica';
+                karticaProcenat.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            }
+
+            // Po fazama
+            const div = document.getElementById('budzet-po-fazama');
+            let html = '<div class="faza-budzet-red header">' +
+                '<div></div>' +
+                '<div>Faza</div>' +
+                '<div class="iznos">Planirano</div>' +
+                '<div class="iznos">Stvarno</div>' +
+                '<div class="procenat"></div>' +
+                '</div>';
+
+            for (const f of rezime.po_fazama) {
+                const procenat = f.procenat_iskoriscenja;
+                let klasa = 'ok';
+                if (procenat > 100) klasa = 'prekoracenje';
+                else if (procenat > 80) klasa = 'blizu';
+
+                html += `<div class="faza-budzet-red">
+                    <div><span class="broj">${f.faza_redni_broj}</span></div>
+                    <div>
+                        <div>${f.faza_naziv}</div>
+                        <div class="procenat-bar"><div class="procenat-fill ${klasa}" style="width:${Math.min(procenat, 100)}%"></div></div>
+                    </div>
+                    <div class="iznos">${formatRSD(f.planirani_budzet)}</div>
+                    <div class="iznos">${formatRSD(f.stvarni_troskovi)}</div>
+                    <div class="procenat">${procenat}%</div>
+                </div>`;
+            }
+
+            div.innerHTML = html;
+        }
+
+        async function ucitajTroskove() {
+                    // ===== GANTT CHART =====
+        let ganttInstanca = null;
+        let trenutnaSkalaGantt = 'Week';
+
+        async function ucitajGantt() {
+            const r = await fetch(`${API}/api/faze/`);
+            const faze = await r.json();
+            
+            const fazeSaDatumima = faze.filter(f => f.planirani_pocetak && f.planirani_kraj);
+
+            if (fazeSaDatumima.length === 0) {
+                document.getElementById('gantt-mesto').innerHTML = '<p style="color:#7f8c8d; padding:20px; text-align:center;">Nema faza sa unetim planiranim datumima. Unesi datume u modalu faze.</p>';
+                return;
+            }
+
+            const zadaci = [];
+            for (const f of fazeSaDatumima) {
+                const pocetak = f.stvarni_pocetak || f.planirani_pocetak;
+                const kraj = f.stvarni_kraj || f.planirani_kraj;
+                
+                zadaci.push({
+                    id: 'faza_' + f.id,
+                    name: `${f.redni_broj}. ${f.naziv}`,
+                    start: pocetak,
+                    end: kraj,
+                    progress: f.stvarni_kraj ? 100 : (f.stvarni_pocetak ? 50 : 0),
+                    custom_class: 'status-' + f.status,
+                });
+            }
+
+            document.getElementById('gantt-mesto').innerHTML = '';
+
+            ganttInstanca = new Gantt("#gantt-mesto", zadaci, {
+                view_mode: trenutnaSkalaGantt,
+                date_format: 'YYYY-MM-DD',
+                on_click: function (task) {
+                    const fazaId = task.id.replace('faza_', '');
+                    otvoriFazu(parseInt(fazaId));
+                },
+                custom_popup_html: function(task) {
+                    const faza = fazeSaDatumima.find(f => 'faza_' + f.id === task.id);
+                    if (!faza) return '';
+                    return `
+                        <div style="padding:10px;">
+                            <strong>${faza.naziv}</strong><br>
+                            Planirano: ${faza.planirani_pocetak} — ${faza.planirani_kraj}<br>
+                            ${faza.stvarni_pocetak ? `Stvarno: ${faza.stvarni_pocetak} — ${faza.stvarni_kraj || 'u toku'}<br>` : ''}
+                            Status: ${STATUS_NAZIVI[faza.status]}
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        function promeniSkaluGantt(skala) {
+            trenutnaSkalaGantt = skala;
+            if (ganttInstanca) {
+                ganttInstanca.change_view_mode(skala);
+            } else {
+                ucitajGantt();
+            }
+        }
+            const fazaId = document.getElementById('filter-trosak-faza').value;
+            const status = document.getElementById('filter-trosak-status').value;
+
+            const params = new URLSearchParams();
+            if (fazaId) params.append('faza_id', fazaId);
+            if (status) params.append('status', status);
+
+            const r = await fetch(`${API}/api/troskovi/?${params}`);
+            const troskovi = await r.json();
+            const div = document.getElementById('lista-troskova');
+
+            if (troskovi.length === 0) {
+                div.innerHTML = '<p style="color:#7f8c8d;">Nema troškova.</p>';
+                return;
+            }
+
+            let html = '<table><thead><tr><th>Datum</th><th>Opis</th><th>Uneо</th><th>Kategorija</th><th>Faza</th><th>Status</th><th style="text-align:right;">Iznos</th><th></th></tr></thead><tbody>';
+            for (const t of troskovi) {
+                // ...
+                html += `<tr>
+                    <td>${t.datum_troska}</td>
+                    <td>...</td>
+                    <td><small style="color:#7f8c8d;">👤 ${t.uneo_ime || '—'}</small></td>
+                    <td>${KATEGORIJE_TROSKA[t.kategorija] || t.kategorija}</td>
+                    <td>${t.faza_naziv || '<span style="color:#bdc3c7;">—</span>'}</td>
+                    <td><span class="badge ${statusClass}" style="${statusStyle}">${STATUS_TROSKA[t.status]}</span></td>
+                    <td style="text-align:right; font-variant-numeric: tabular-nums; font-weight:600;">${formatRSD(t.iznos)}</td>
+                    <td><button class="danger" onclick="obrisiTrosak(${t.id})">Obriši</button></td>
+                </tr>`;
+            }
+            html += '</tbody></table>';
+            div.innerHTML = html;
+        }
+
+        async function napuniSelecteZaTrosak() {
+            // Faze
+            const rF = await fetch(`${API}/api/faze/`);
+            const faze = await rF.json();
+
+            const selectFaza = document.getElementById('trosak-faza');
+            selectFaza.innerHTML = '<option value="">-- Bez faze --</option>';
+            for (const f of faze) {
+                const opt = document.createElement('option');
+                opt.value = f.id;
+                opt.textContent = `${f.redni_broj}. ${f.naziv}`;
+                selectFaza.appendChild(opt);
+            }
+
+            // Isti select u filteru
+            const filterFaza = document.getElementById('filter-trosak-faza');
+            filterFaza.innerHTML = '<option value="">Sve faze</option>';
+            for (const f of faze) {
+                const opt = document.createElement('option');
+                opt.value = f.id;
+                opt.textContent = `${f.redni_broj}. ${f.naziv}`;
+                filterFaza.appendChild(opt);
+            }
+
+            // Firme
+            const rFi = await fetch(`${API}/api/firme/`);
+            const firme = await rFi.json();
+            const selectFirma = document.getElementById('trosak-firma');
+            selectFirma.innerHTML = '<option value="">-- Bez firme --</option>';
+            for (const f of firme) {
+                const opt = document.createElement('option');
+                opt.value = f.id;
+                opt.textContent = f.naziv;
+                selectFirma.appendChild(opt);
+            }
+        }
+
+        // Forma za trošak
+        document.getElementById('forma-trosak').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const forma = e.target;
+            const podaci = Object.fromEntries(new FormData(forma));
+
+            // Konverzije
+            podaci.iznos = parseInt(podaci.iznos);
+            if (podaci.faza_id) podaci.faza_id = parseInt(podaci.faza_id);
+            else delete podaci.faza_id;
+            if (podaci.firma_id) podaci.firma_id = parseInt(podaci.firma_id);
+            else delete podaci.firma_id;
+
+            // Ukloni prazna polja
+            for (const k in podaci) {
+                if (podaci[k] === '' || podaci[k] === null) delete podaci[k];
+            }
+
+            const poruka = document.getElementById('poruka-trosak');
+            try {
+                const r = await fetch(`${API}/api/troskovi/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(podaci)
+                });
+                if (r.ok) {
+                    poruka.textContent = '✅ Sačuvano!';
+                    poruka.style.color = '#27ae60';
+                    forma.reset();
+                    // Resetuj datum na danas
+                    document.getElementById('trosak-datum').value = new Date().toISOString().split('T')[0];
+                    ucitajTroskove();
+                    ucitajRezime();
+                    setTimeout(() => poruka.textContent = '', 3000);
+                } else {
+                    const err = await r.json();
+                    poruka.textContent = '❌ ' + JSON.stringify(err);
+                    poruka.style.color = '#e74c3c';
+                }
+            } catch (e) {
+                poruka.textContent = '❌ Greška: ' + e.message;
+                poruka.style.color = '#e74c3c';
+            }
+        });
+
+        async function obrisiTrosak(id) {
+            if (!confirm('Sigurno obrisati ovaj trošak?')) return;
+            await fetch(`${API}/api/troskovi/${id}`, { method: 'DELETE' });
+            ucitajTroskove();
+            ucitajRezime();
+        }
+
+        // Filteri
+        document.getElementById('filter-trosak-faza').addEventListener('change', ucitajTroskove);
+        document.getElementById('filter-trosak-status').addEventListener('change', ucitajTroskove);
+
+        // ===== PODSETNICI =====
+
+        const PRIORITETI = {
+            'nisko': 'Nisko',
+            'srednje': 'Srednje',
+            'visoko': 'Visoko',
+            'hitno': 'Hitno',
+        };
+
+        const KATEGORIJE_PODSETNIKA = {
+            'zakonski': 'Zakonski',
+            'ugovor': 'Ugovor',
+            'licenca': 'Licenca',
+            'placanje': 'Plaćanje',
+            'opste': 'Opšte',
+        };
+
+        function formatDatum(datumStr) {
+            const d = new Date(datumStr + 'T00:00:00');
+            return d.toLocaleDateString('sr-RS', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+
+        async function ucitajRezimePodsetnika() {
+            const r = await fetch(`${API}/api/podsetnici/rezime/`);
+            const rezime = await r.json();
+
+            const traka = document.getElementById('podsetnici-traka');
+            const kartica = document.getElementById('kartica-podsetnici');
+
+            if (rezime.ukupno_aktivnih === 0) {
+                kartica.style.display = 'none';
+                return;
+            }
+
+            kartica.style.display = 'block';
+            traka.innerHTML = `
+                <div class="podsetnik-kartica danas">
+                    <div class="broj">${rezime.danas}</div>
+                    <div class="label">Danas</div>
+                </div>
+                <div class="podsetnik-kartica sutra">
+                    <div class="broj">${rezime.sutra}</div>
+                    <div class="label">Sutra</div>
+                </div>
+                <div class="podsetnik-kartica nedelja">
+                    <div class="broj">${rezime.ove_nedelje}</div>
+                    <div class="label">Ove nedelje</div>
+                </div>
+                <div class="podsetnik-kartica kasni">
+                    <div class="broj">${rezime.kasni}</div>
+                    <div class="label">Kasni</div>
+                </div>
+                <div class="podsetnik-kartica">
+                    <div class="broj">${rezime.ukupno_aktivnih}</div>
+                    <div class="label">Ukupno aktivnih</div>
+                </div>
+            `;
+        }
+
+        async function ucitajPodsetnike() {
+            const prikaziZavrsene = document.getElementById('filter-zavrseni').checked;
+            const kategorija = document.getElementById('filter-podsetnik-kategorija').value;
+
+            const params = new URLSearchParams();
+            if (!prikaziZavrsene) params.append('zavrseno', 'false');
+            if (kategorija) params.append('kategorija', kategorija);
+
+            const r = await fetch(`${API}/api/podsetnici/?${params}`);
+            const podsetnici = await r.json();
+            const div = document.getElementById('lista-podsetnika');
+
+            if (podsetnici.length === 0) {
+                div.innerHTML = '<p style="color:#7f8c8d;">Nema podsetnika.</p>';
+                return;
+            }
+
+            let html = '';
+            for (const p of podsetnici) {
+                let datumClass = '';
+                if (!p.zavrseno) {
+                    if (p.dani_do_dospeca < 0) datumClass = 'kasni';
+                    else if (p.dani_do_dospeca === 0) datumClass = 'danas';
+                    else if (p.dani_do_dospeca === 1) datumClass = 'sutra';
+                }
+
+                let daniTekst = '';
+                if (!p.zavrseno) {
+                    if (p.dani_do_dospeca < 0) daniTekst = `(${Math.abs(p.dani_do_dospeca)} dana kasni)`;
+                    else if (p.dani_do_dospeca === 0) daniTekst = '(danas)';
+                    else if (p.dani_do_dospeca === 1) daniTekst = '(sutra)';
+                    else daniTekst = `(za ${p.dani_do_dospeca} dana)`;
+                }
+
+                html += `<div class="podsetnik-red ${p.zavrseno ? 'zavrsen' : ''}">
+                    <div>
+                        <input type="checkbox" class="podsetnik-check" ${p.zavrseno ? 'checked' : ''} onchange="togglePodsetnik(${p.id})">
+                    </div>
+                    <div>
+                        <div class="naslov"><strong>${p.naslov}</strong>${p.automatski ? ' <span class="kategorija-tag">⚙️ auto</span>' : ''}</div>
+                        ${p.opis ? '<div style="font-size:12px; color:#7f8c8d;">' + p.opis + '</div>' : ''}
+                        ${p.faza_naziv ? '<div style="font-size:12px; color:#7f8c8d;">🏛️ ' + p.faza_naziv + '</div>' : ''}
+                        ${p.firma_naziv ? '<div style="font-size:12px; color:#7f8c8d;">🏢 ' + p.firma_naziv + '</div>' : ''}
+                    </div>
+                    <div>
+                        <div class="podsetnik-datum ${datumClass}">${formatDatum(p.datum_dospeca)}</div>
+                        <div style="font-size:11px; color:#7f8c8d;">${daniTekst}</div>
+                    </div>
+                    <div><span class="prioritet-tag prioritet-${p.prioritet}">${PRIORITETI[p.prioritet]}</span></div>
+                    <div>
+                        <span class="kategorija-tag">${KATEGORIJE_PODSETNIKA[p.kategorija] || p.kategorija}</span>
+                        <button class="danger" style="float:right;" onclick="obrisiPodsetnik(${p.id})">×</button>
+                    </div>
+                </div>`;
+            }
+            div.innerHTML = html;
+        }
+
+        async function napuniSelecteZaPodsetnik() {
+            const rF = await fetch(`${API}/api/faze/`);
+            const faze = await rF.json();
+            const selectFaza = document.getElementById('podsetnik-faza');
+            selectFaza.innerHTML = '<option value="">-- Bez faze --</option>';
+            for (const f of faze) {
+                const opt = document.createElement('option');
+                opt.value = f.id;
+                opt.textContent = `${f.redni_broj}. ${f.naziv}`;
+                selectFaza.appendChild(opt);
+            }
+
+            const rFi = await fetch(`${API}/api/firme/`);
+            const firme = await rFi.json();
+            const selectFirma = document.getElementById('podsetnik-firma');
+            selectFirma.innerHTML = '<option value="">-- Bez firme --</option>';
+            for (const f of firme) {
+                const opt = document.createElement('option');
+                opt.value = f.id;
+                opt.textContent = f.naziv;
+                selectFirma.appendChild(opt);
+            }
+        }
+
+        document.getElementById('forma-podsetnik').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const forma = e.target;
+            const podaci = Object.fromEntries(new FormData(forma));
+
+            if (podaci.faza_id) podaci.faza_id = parseInt(podaci.faza_id);
+            else delete podaci.faza_id;
+            if (podaci.firma_id) podaci.firma_id = parseInt(podaci.firma_id);
+            else delete podaci.firma_id;
+
+            for (const k in podaci) {
+                if (podaci[k] === '') delete podaci[k];
+            }
+
+            const poruka = document.getElementById('poruka-podsetnik');
+            try {
+                const r = await fetch(`${API}/api/podsetnici/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(podaci)
+                });
+                if (r.ok) {
+                    poruka.textContent = '✅ Sačuvano!';
+                    poruka.style.color = '#27ae60';
+                    forma.reset();
+                    document.getElementById('podsetnik-datum').value = new Date().toISOString().split('T')[0];
+                    ucitajPodsetnike();
+                    ucitajRezimePodsetnika();
+                    setTimeout(() => poruka.textContent = '', 3000);
+                } else {
+                    const err = await r.json();
+                    poruka.textContent = '❌ ' + JSON.stringify(err);
+                    poruka.style.color = '#e74c3c';
+                }
+            } catch (e) {
+                poruka.textContent = '❌ Greška: ' + e.message;
+                poruka.style.color = '#e74c3c';
+            }
+        });
+
+        async function togglePodsetnik(id) {
+            await fetch(`${API}/api/podsetnici/${id}/zavrsi`, { method: 'POST' });
+            ucitajPodsetnike();
+            ucitajRezimePodsetnika();
+        }
+
+        async function obrisiPodsetnik(id) {
+            if (!confirm('Obrisati ovaj podsetnik?')) return;
+            await fetch(`${API}/api/podsetnici/${id}`, { method: 'DELETE' });
+            ucitajPodsetnike();
+            ucitajRezimePodsetnika();
+        }
+
+        async function generisiZakonske() {
+            const poruka = document.getElementById('poruka-podsetnik');
+            const r = await fetch(`${API}/api/podsetnici/generisi-zakonske/`, { method: 'POST' });
+            const data = await r.json();
+            if (data.broj > 0) {
+                poruka.textContent = `✅ Generisano ${data.broj} podsetnika`;
+                poruka.style.color = '#27ae60';
+            } else {
+                poruka.textContent = '⚠️ Nema šta da se generiše (nedostaju planirani datumi u fazama)';
+                poruka.style.color = '#e67e22';
+            }
+            ucitajPodsetnike();
+            ucitajRezimePodsetnika();
+        }
+
+        document.getElementById('filter-zavrseni').addEventListener('change', ucitajPodsetnike);
+
+        // ===== WEB PUSH NOTIFIKACIJE =====
+
+        let pushPretplata = null;
+
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
+
+        async function proveriPushStatus() {
+            const el = document.getElementById('push-status');
+            const btn = document.getElementById('btn-push');
+
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                el.textContent = '❌ Nije podržano u ovom pretraživaču';
+                el.style.color = '#e74c3c';
+                btn.disabled = true;
+                return;
+            }
+
+            const registracija = await navigator.serviceWorker.ready;
+            pushPretplata = await registracija.pushManager.getSubscription();
+
+            if (pushPretplata) {
+                el.textContent = '✅ Uključene';
+                el.style.color = '#27ae60';
+                btn.textContent = '🔕 Isključi notifikacije';
+                btn.style.background = '#95a5a6';
+                btn.onclick = iskljuciPush;
+            } else {
+                el.textContent = '⚠️ Isključene';
+                el.style.color = '#e67e22';
+                btn.textContent = '🔔 Uključi notifikacije';
+                btn.style.background = '#27ae60';
+                btn.onclick = ukljuciPush;
+            }
+        }
+
+        async function ukljuciPush() {
+            const poruka = document.getElementById('push-poruka');
+            try {
+                // 1. Traži dozvolu
+                const dozvola = await Notification.requestPermission();
+                if (dozvola !== 'granted') {
+                    poruka.textContent = '❌ Dozvola odbijena';
+                    poruka.style.color = '#e74c3c';
+                    return;
+                }
+
+                // 2. Uzmi VAPID javni ključ sa servera
+                const r = await fetch(`${API}/api/push/vapid-public-key`);
+                const { publicKey } = await r.json();
+
+                // 3. Registruj Service Worker
+                const registracija = await navigator.serviceWorker.register('/service-worker.js');
+                await navigator.serviceWorker.ready;
+
+                // 4. Pretplati se
+                pushPretplata = await registracija.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(publicKey),
+                });
+
+                // 5. Pošalji pretplatu backendu
+                const podaci = pushPretplata.toJSON();
+                const r2 = await fetch(`${API}/api/push/pretplati-se`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        endpoint: podaci.endpoint,
+                        p256dh: podaci.keys.p256dh,
+                        auth: podaci.keys.auth,
+                        user_agent: navigator.userAgent.substring(0, 300),
+                    }),
+                });
+
+                if (r2.ok) {
+                    poruka.textContent = '✅ Notifikacije uključene';
+                    poruka.style.color = '#27ae60';
+                    proveriPushStatus();
+                } else {
+                    poruka.textContent = '❌ Greška pri registraciji';
+                    poruka.style.color = '#e74c3c';
+                }
+            } catch (e) {
+                console.error(e);
+                poruka.textContent = '❌ ' + e.message;
+                poruka.style.color = '#e74c3c';
+            }
+        }
+
+        async function iskljuciPush() {
+            const poruka = document.getElementById('push-poruka');
+            if (!pushPretplata) return;
+
+            await fetch(`${API}/api/push/pretplati-se?endpoint=${encodeURIComponent(pushPretplata.endpoint)}`, {
+                method: 'DELETE',
+            });
+            await pushPretplata.unsubscribe();
+            pushPretplata = null;
+
+            poruka.textContent = '🔕 Notifikacije isključene';
+            poruka.style.color = '#7f8c8d';
+            proveriPushStatus();
+        }
+
+        async function testNotifikacije() {
+            const poruka = document.getElementById('push-poruka');
+            poruka.textContent = '⏳ Šaljem...';
+            poruka.style.color = '#7f8c8d';
+
+            const r = await fetch(`${API}/api/push/test`, { method: 'POST' });
+            if (r.ok) {
+                poruka.textContent = '✅ Poslato (proveri email i notifikacije)';
+                poruka.style.color = '#27ae60';
+            } else {
+                poruka.textContent = '❌ Greška';
+                poruka.style.color = '#e74c3c';
+            }
+        }
+
+        // Registruj Service Worker pri učitavanju (bez pretplate)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js').catch(err => {
+                console.warn('Service Worker registracija neuspešna:', err);
+            });
+        }
+
+        // ===== KAPITAL =====
+
+        const KATEGORIJE_KAPITALA = {
+            'usteda': 'Ušteđevina',
+            'kredit': 'Kredit',
+            'pomoc': 'Pomoć',
+            'prodaja': 'Prodaja',
+            'ostalo': 'Ostalo',
+        };
+
+        async function ucitajRezimeKapitala() {
+            const r = await fetch(`${API}/api/kapital/rezime/`);
+            const rezime = await r.json();
+
+            document.getElementById('kap-ukupno').textContent = formatRSD(rezime.ukupan_kapital);
+            document.getElementById('kap-potroseno').textContent = formatRSD(rezime.ukupni_troskovi);
+            document.getElementById('kap-preostalo').textContent = formatRSD(rezime.preostalo);
+            document.getElementById('kap-budzet').textContent = formatRSD(rezime.ukupan_budzet);
+
+            // Razlika kapital - budžet
+            const razlika = rezime.kapital_vs_budzet;
+            const razlikaEl = document.getElementById('kap-razlika');
+            if (razlika >= 0) {
+                razlikaEl.textContent = `+${formatRSD(razlika)} viška`;
+                razlikaEl.style.color = '#d5f4e6';
+            } else {
+                razlikaEl.textContent = `${formatRSD(Math.abs(razlika))} manjka`;
+                razlikaEl.style.color = '#fadbd8';
+            }
+
+            // Boja kartice "Preostalo"
+            const karticaPreostalo = document.getElementById('kap-kartica-preostalo');
+            if (rezime.preostalo < 0) {
+                karticaPreostalo.className = 'kapital-kartica crveno';
+            } else if (rezime.preostalo < rezime.ukupan_kapital * 0.2) {
+                karticaPreostalo.className = 'kapital-kartica narandzasto';
+            } else {
+                karticaPreostalo.className = 'kapital-kartica zeleno';
+            }
+
+            // Progress bar
+            const progress = document.getElementById('kap-progress');
+            const proc = Math.min(rezime.procenat_potroseno, 100);
+            progress.style.width = proc + '%';
+            progress.textContent = rezime.procenat_potroseno + '%';
+            if (rezime.procenat_potroseno > 100) {
+                progress.classList.add('prekoracenje');
+            } else {
+                progress.classList.remove('prekoracenje');
+            }
+        }
+
+        async function ucitajKapitale() {
+            const r = await fetch(`${API}/api/kapital/`);
+            const kapitali = await r.json();
+            const div = document.getElementById('lista-kapitala');
+
+            if (kapitali.length === 0) {
+                div.innerHTML = '<p style="color:#7f8c8d;">Nema unetog kapitala.</p>';
+                return;
+            }
+
+            let html = '<table><thead><tr><th>Datum</th><th>Naziv</th><th>Kategorija</th><th style="text-align:right;">Iznos</th><th></th></tr></thead><tbody>';
+            for (const k of kapitali) {
+                html += `<tr>
+                    <td>${k.datum}</td>
+                    <td>
+                        <strong>${k.naziv}</strong>
+                        ${k.napomena ? '<br><small style="color:#7f8c8d;">' + k.napomena + '</small>' : ''}
+                    </td>
+                    <td>${KATEGORIJE_KAPITALA[k.kategorija] || k.kategorija}</td>
+                    <td style="text-align:right; font-variant-numeric: tabular-nums; font-weight:600; color:#27ae60;">+${formatRSD(k.iznos)}</td>
+                    <td><button class="danger" onclick="obrisiKapital(${k.id})">Obriši</button></td>
+                </tr>`;
+            }
+            html += '</tbody></table>';
+            div.innerHTML = html;
+        }
+
+        document.getElementById('forma-kapital').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const forma = e.target;
+            const podaci = Object.fromEntries(new FormData(forma));
+
+            podaci.iznos = parseInt(podaci.iznos);
+            for (const k in podaci) {
+                if (podaci[k] === '') delete podaci[k];
+            }
+
+            const poruka = document.getElementById('poruka-kapital');
+            try {
+                const r = await fetch(`${API}/api/kapital/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(podaci)
+                });
+                if (r.ok) {
+                    poruka.textContent = '✅ Sačuvano!';
+                    poruka.style.color = '#27ae60';
+                    forma.reset();
+                    document.getElementById('kapital-datum').value = new Date().toISOString().split('T')[0];
+                    ucitajKapitale();
+                    ucitajRezimeKapitala();
+                    setTimeout(() => poruka.textContent = '', 3000);
+                } else {
+                    const err = await r.json();
+                    poruka.textContent = '❌ ' + JSON.stringify(err);
+                    poruka.style.color = '#e74c3c';
+                }
+            } catch (e) {
+                poruka.textContent = '❌ ' + e.message;
+                poruka.style.color = '#e74c3c';
+            }
+        });
+
+        async function obrisiKapital(id) {
+            if (!confirm('Obrisati ovaj izvor kapitala?')) return;
+            await fetch(`${API}/api/kapital/${id}`, { method: 'DELETE' });
+            ucitajKapitale();
+            ucitajRezimeKapitala();
+        }
+
+        // ===== DOKUMENTI =====
+
+        const KATEGORIJE_DOK = {
+            'dozvola': 'Dozvola',
+            'ugovor': 'Ugovor',
+            'racun': 'Račun',
+            'projekat': 'Projekat',
+            'izjava': 'Izjava',
+            'ostalo': 'Ostalo',
+        };
+
+        const IKONE_DOK = {
+            'application/pdf': '📕',
+            'image/jpeg': '🖼️',
+            'image/png': '🖼️',
+            'image/webp': '🖼️',
+            'image/heic': '🖼️',
+            'image/tiff': '🖼️',
+            'application/msword': '📘',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '📘',
+            'application/vnd.ms-excel': '📗',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '📗',
+        };
+
+        const OCR_STATUS_NAZIVI = {
+            'ceka': '⏳ Čeka',
+            'u_toku': '⚙️ U toku',
+            'zavrseno': '✅ OCR',
+            'greska': '❌ Greška',
+        };
+
+        function formatVelicinu(bajtova) {
+            if (bajtova < 1024) return bajtova + ' B';
+            if (bajtova < 1024 * 1024) return (bajtova / 1024).toFixed(1) + ' KB';
+            return (bajtova / 1024 / 1024).toFixed(1) + ' MB';
+        }
+
+        let izabraniFajl = null;
+
+        function izabranFajl(fajl) {
+            if (!fajl) return;
+            if (fajl.size > 20 * 1024 * 1024) {
+                alert('Fajl je veći od 20 MB!');
+                return;
+            }
+            izabraniFajl = fajl;
+            document.getElementById('fajl-info').textContent =
+                `📎 ${fajl.name} (${formatVelicinu(fajl.size)})`;
+            document.getElementById('forma-dokument').style.display = 'block';
+            document.getElementById('drop-zona').style.display = 'none';
+
+            // Auto-popuni naziv ako je prazno
+            const nazivInput = document.querySelector('#forma-dokument [name="naziv"]');
+            if (!nazivInput.value) {
+                nazivInput.value = fajl.name.replace(/\.[^.]+$/, '');
+            }
+        }
+
+        function otkaziUpload() {
+            izabraniFajl = null;
+            document.getElementById('fajl-info').textContent = '';
+            document.getElementById('forma-dokument').style.display = 'none';
+            document.getElementById('forma-dokument').reset();
+            document.getElementById('drop-zona').style.display = 'block';
+        }
+
+        // Drag & drop
+        const dropZona = document.getElementById('drop-zona');
+        dropZona.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZona.classList.add('aktivan');
+        });
+        dropZona.addEventListener('dragleave', () => {
+            dropZona.classList.remove('aktivan');
+        });
+        dropZona.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZona.classList.remove('aktivan');
+            if (e.dataTransfer.files.length > 0) {
+                izabranFajl(e.dataTransfer.files[0]);
+            }
+        });
+
+        // Upload forma
+        document.getElementById('forma-dokument').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!izabraniFajl) return;
+
+            const forma = e.target;
+            const fd = new FormData();
+            fd.append('fajl', izabraniFajl);
+            fd.append('naziv', forma.naziv.value);
+            fd.append('kategorija', forma.kategorija.value);
+            if (forma.opis.value) fd.append('opis', forma.opis.value);
+            if (forma.faza_id.value) fd.append('faza_id', forma.faza_id.value);
+            if (forma.firma_id.value) fd.append('firma_id', forma.firma_id.value);
+            if (forma.datum_dokumenta.value) fd.append('datum_dokumenta', forma.datum_dokumenta.value);
+
+            const btn = document.getElementById('btn-upload');
+            const poruka = document.getElementById('poruka-dokument');
+            btn.disabled = true;
+            btn.textContent = '⏳ Upload...';
+            poruka.textContent = '';
+
+            try {
+                const r = await fetch(`${API}/api/dokumenti/`, {
+                    method: 'POST',
+                    body: fd,
+                });
+                if (r.ok) {
+                    poruka.textContent = '✅ Upload-ovano! OCR radi u pozadini.';
+                    poruka.style.color = '#27ae60';
+                    otkaziUpload();
+                    ucitajDokumente();
+                    setTimeout(() => poruka.textContent = '', 5000);
+                } else {
+                    const err = await r.json();
+                    poruka.textContent = '❌ ' + (err.detail || JSON.stringify(err));
+                    poruka.style.color = '#e74c3c';
+                }
+            } catch (e) {
+                poruka.textContent = '❌ ' + e.message;
+                poruka.style.color = '#e74c3c';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '📤 Upload dokumenta';
+            }
+        });
+
+        // Lista dokumenata
+        async function ucitajDokumente() {
+            const kategorija = document.getElementById('filter-dok-kategorija').value;
+            const fazaId = document.getElementById('filter-dok-faza').value;
+            const firmaId = document.getElementById('filter-dok-firma').value;
+
+            const params = new URLSearchParams();
+            if (kategorija) params.append('kategorija', kategorija);
+            if (fazaId) params.append('faza_id', fazaId);
+            if (firmaId) params.append('firma_id', firmaId);
+
+            const r = await fetch(`${API}/api/dokumenti/?${params}`);
+            const dokumenti = await r.json();
+            const div = document.getElementById('lista-dokumenata');
+
+            if (dokumenti.length === 0) {
+                div.innerHTML = '<p style="color:#7f8c8d;">Nema dokumenata.</p>';
+                return;
+            }
+
+            let html = '';
+            for (const d of dokumenti) {
+                const ikona = IKONE_DOK[d.mime_tip] || '📄';
+                const katClass = 'kat-' + d.kategorija;
+                const ocrClass = 'ocr-' + d.ocr_status;
+                const ocrNaziv = OCR_STATUS_NAZIVI[d.ocr_status] || d.ocr_status;
+
+                html += `<div class="dokument-red" onclick="otvoriDokument(${d.id})">
+                    <div class="dokument-ikona">${ikona}</div>
+                    <div>
+                        <div class="dokument-naziv">${d.naziv}</div>
+                        <div class="dokument-meta">
+                            ${d.originalni_naziv} · ${formatVelicinu(d.velicina_bajtova)}
+                            ${d.faza_naziv ? ' · 🏛️ ' + d.faza_naziv : ''}
+                            ${d.firma_naziv ? ' · 🏢 ' + d.firma_naziv : ''}
+                            ${d.uneo_ime ? ' · 👤 ' + d.uneo_ime : ''}
+                        </div>
+                    </div>
+                    <div><span class="dokument-kategorija ${katClass}">${KATEGORIJE_DOK[d.kategorija] || d.kategorija}</span></div>
+                    <div><span class="ocr-status ${ocrClass}">${ocrNaziv}</span></div>
+                    <div style="font-size:12px; color:#7f8c8d;">${new Date(d.kreirano).toLocaleDateString('sr-RS')}</div>
+                    <div onclick="event.stopPropagation();">
+                        <button class="danger" onclick="obrisiDokument(${d.id})">Obriši</button>
+                    </div>
+                </div>`;
+            }
+            div.innerHTML = html;
+        }
+
+        // Pretraga
+        let pretragaTimer = null;
+        document.getElementById('pretraga-dokumenata').addEventListener('input', (e) => {
+            clearTimeout(pretragaTimer);
+            const q = e.target.value.trim();
+            const div = document.getElementById('rezultati-pretrage');
+
+            if (q.length < 2) {
+                div.innerHTML = '';
+                ucitajDokumente();
+                return;
+            }
+
+            pretragaTimer = setTimeout(async () => {
+                document.getElementById('lista-dokumenata').innerHTML = '';
+                const r = await fetch(`${API}/api/dokumenti/pretraga/?q=${encodeURIComponent(q)}`);
+                const rezultati = await r.json();
+
+                if (rezultati.length === 0) {
+                    div.innerHTML = '<p style="color:#7f8c8d; padding:10px;">Nema rezultata za: <strong>' + q + '</strong></p>';
+                    return;
+                }
+
+                let html = `<p style="color:#7f8c8d; font-size:13px; padding: 10px 0;">Pronađeno ${rezultati.length} dokumenata:</p>`;
+                for (const r of rezultati) {
+                    const d = r.dokument;
+                    const ikona = IKONE_DOK[d.mime_tip] || '📄';
+                    html += `<div class="dokument-red" onclick="otvoriDokument(${d.id})">
+                        <div class="dokument-ikona">${ikona}</div>
+                        <div style="grid-column: span 5;">
+                            <div class="dokument-naziv">${d.naziv}</div>
+                            <div class="dokument-meta">${d.originalni_naziv}</div>
+                            ${r.snippet ? `<div class="snippet">${r.snippet}</div>` : ''}
+                        </div>
+                    </div>`;
+                }
+                div.innerHTML = html;
+            }, 400);
+        });
+
+                async function otvoriDokument(id) {
+            // 1. Uzimamo podatke o dokumentu (JSON)
+            const r = await fetch(`${API}/api/dokumenti/${id}/tekst`); // Koristimo tekst rutu jer ona sigurno vraća JSON
+            const d = await (await fetch(`${API}/api/dokumenti/${id}`)).json().catch(() => null);
+            
+            // Ako fallback ruta vrati PDF umesto JSON-a, moramo da povučemo podatke iz liste
+            let dokument = d;
+            if (!dokument || !dokument.naziv) {
+                // Ako nismo dobili JSON, tražimo dokument u lokalnoj listi (koja je već učitana)
+                // ili pravimo privremeni objekat
+                dokument = { id: id, naziv: "Dokument", mime_tip: "application/pdf" };
+            }
+            
+            // Pošto je backend rutiranje malo čudno, najsigurnije je da uzmemo podatke iz liste dokumenata
+            // koju već imamo u memoriji (ako je imamo), ili da ih povučemo preko posebnog poziva.
+            
+            // Najlakši fix: Koristimo ono što znamo
+            const urlFajl = `${API}/api/dokumenti/${id}/fajl`;
+            
+            // Pošto je ovo samo preview, napravićemo pojednostavljen modal
+            document.getElementById('modal-body').innerHTML = `
+                <h2>Dokument</h2>
+                <div class="preview-kontejner">
+                    <iframe src="${urlFajl}" style="width:100%; height:600px; border:none;"></iframe>
+                </div>
+                <div style="margin-top: 15px;">
+                    <button onclick="window.open('${urlFajl}', '_blank')" class="btn-sekundarno">📥 Download</button>
+                    <button onclick="obrisiDokument(${id})" class="danger" style="margin-left:auto;">Obriši</button>
+                </div>
+            `;
+
+            document.getElementById('modal-overlay').classList.add('aktivan');
+        }
+
+        async function prikaziOcr(id) {
+            const r = await fetch(`${API}/api/dokumenti/${id}/tekst`);
+            const data = await r.json();
+            const div = document.getElementById('ocr-prikaz-kontejner');
+
+            if (data.status === 'ceka' || data.status === 'u_toku') {
+                div.innerHTML = '<div class="snippet">⏳ OCR još radi. Sačekaj i pokušaj ponovo.</div>';
+                return;
+            }
+            if (data.status === 'greska') {
+                div.innerHTML = '<div class="snippet">❌ OCR nije uspeo za ovaj dokument.</div>';
+                return;
+            }
+
+            div.innerHTML = `
+                <h3 style="margin-top:15px;">📝 OCR tekst (${data.duzina} karaktera)</h3>
+                <div class="ocr-prikaz">${data.tekst || '(prazno)'}</div>
+            `;
+        }
+
+        async function ponovoPokreniOcr(id) {
+            await fetch(`${API}/api/dokumenti/${id}/pokreni-ocr`, { method: 'POST' });
+            alert('OCR pokrenut u pozadini.');
+            ucitajDokumente();
+        }
+
+        async function obrisiDokument(id) {
+            if (!confirm('Sigurno obrisati ovaj dokument? Fajl se trajno briše.')) return;
+            await fetch(`${API}/api/dokumenti/${id}`, { method: 'DELETE' });
+            zatvoriModal();
+            ucitajDokumente();
+        }
+
+        async function napuniSelecteZaDokumente() {
+            const rF = await fetch(`${API}/api/faze/`);
+            const faze = await rF.json();
+            const selectFaza = document.getElementById('dok-faza');
+            selectFaza.innerHTML = '<option value="">-- Bez faze --</option>';
+            for (const f of faze) {
+                const opt = document.createElement('option');
+                opt.value = f.id;
+                opt.textContent = `${f.redni_broj}. ${f.naziv}`;
+                selectFaza.appendChild(opt);
+            }
+
+            const filterFaza = document.getElementById('filter-dok-faza');
+            filterFaza.innerHTML = '<option value="">Sve faze</option>';
+            for (const f of faze) {
+                const opt = document.createElement('option');
+                opt.value = f.id;
+                opt.textContent = `${f.redni_broj}. ${f.naziv}`;
+                filterFaza.appendChild(opt);
+            }
+
+            const rFi = await fetch(`${API}/api/firme/`);
+            const firme = await rFi.json();
+            const selectFirma = document.getElementById('dok-firma');
+            selectFirma.innerHTML = '<option value="">-- Bez firme --</option>';
+            for (const f of firme) {
+                const opt = document.createElement('option');
+                opt.value = f.id;
+                opt.textContent = f.naziv;
+                selectFirma.appendChild(opt);
+            }
+
+            const filterFirma = document.getElementById('filter-dok-firma');
+            filterFirma.innerHTML = '<option value="">Sve firme</option>';
+            for (const f of firme) {
+                const opt = document.createElement('option');
+                opt.value = f.id;
+                opt.textContent = f.naziv;
+                filterFirma.appendChild(opt);
+            }
+        }
+
+        // Modal za dokumente treba da bude veći
+        // Ovo radimo tako što dodajemo klasu "veliki" na modal sadržaj
+        const originalOtvoriModal = otvoriModal;
+        otvoriModal = async function(id) {
+            document.querySelector('.modal').classList.remove('veliki');
+            return originalOtvoriModal(id);
+        };
+        const originalOtvoriFazu = otvoriFazu;
+        otvoriFazu = async function(id) {
+            document.querySelector('.modal').classList.remove('veliki');
+            return originalOtvoriFazu(id);
+        };
+        // I za dokumente dodajemo "veliki"
+        const originalOtvoriDokument = otvoriDokument;
+        otvoriDokument = async function(id) {
+            document.querySelector('.modal').classList.add('veliki');
+            return originalOtvoriDokument(id);
+        };
+
+        // ===== GANTT CHART =====
+        let ganttInstanca = null;
+        let trenutnaSkalaGantt = 'Week';
+
+        async function ucitajGantt() {
+            const r = await fetch(`${API}/api/faze/`);
+            const faze = await r.json();
+            
+            // Filtriraj samo faze koje imaju bar planirani početak i kraj
+            const fazeSaDatumima = faze.filter(f => f.planirani_pocetak && f.planirani_kraj);
+
+            if (fazeSaDatumima.length === 0) {
+                document.getElementById('gantt-mesto').innerHTML = '<p style="color:#7f8c8d; padding:20px; text-align:center;">Nema faza sa unetim planiranim datumima. Unesi datume u modalu faze.</p>';
+                return;
+            }
+
+            // Formiraj podatke za Gantt
+            const zadaci = [];
+            for (const f of fazeSaDatumima) {
+                // Ako ima stvarni početak i kraj, koristi njih, inače planirane
+                const pocetak = f.stvarni_pocetak || f.planirani_pocetak;
+                const kraj = f.stvarni_kraj || f.planirani_kraj;
+                
+                // Gantt zahteva YYYY-MM-DD format
+                zadaci.push({
+                    id: 'faza_' + f.id,
+                    name: `${f.redni_broj}. ${f.naziv}`,
+                    start: pocetak,
+                    end: kraj,
+                    progress: f.stvarni_kraj ? 100 : (f.stvarni_pocetak ? 50 : 0),
+                    custom_class: 'status-' + f.status,
+                });
+            }
+
+            // Obriši staru instancu ako postoji
+            document.getElementById('gantt-mesto').innerHTML = '';
+
+            // Napravi novi Gantt
+            ganttInstanca = new Gantt("#gantt-mesto", zadaci, {
+                view_mode: trenutnaSkalaGantt,
+                date_format: 'YYYY-MM-DD',
+                language: 'sr', // Ako je podržano, inače će biti na engleskom
+                on_click: function (task) {
+                    // Kada klikneš na traku, otvori fazu
+                    const fazaId = task.id.replace('faza_', '');
+                    otvoriFazu(parseInt(fazaId));
+                },
+                custom_popup_html: function(task) {
+                    const faza = fazeSaDatumima.find(f => 'faza_' + f.id === task.id);
+                    if (!faza) return '';
+                    return `
+                        <div style="padding:10px;">
+                            <strong>${faza.naziv}</strong><br>
+                            Planirano: ${faza.planirani_pocetak} — ${faza.planirani_kraj}<br>
+                            ${faza.stvarni_pocetak ? `Stvarno: ${faza.stvarni_pocetak} — ${faza.stvarni_kraj || 'u toku'}<br>` : ''}
+                            Status: ${STATUS_NAZIVI[faza.status]}
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        function promeniSkaluGantt(skala) {
+            trenutnaSkalaGantt = skala;
+            if (ganttInstanca) {
+                ganttInstanca.change_view_mode(skala);
+            } else {
+                ucitajGantt();
+            }
+        }
+
+        // ===== MATERIJALI =====
+
+        async function ucitajMaterijale() {
+            const r = await fetch(`${API}/api/materijali/`);
+            const materijali = await r.json();
+            const div = document.getElementById('lista-materijala');
+
+            if (materijali.length === 0) {
+                div.innerHTML = '<p style="color:#7f8c8d;">Nema materijala.</p>';
+                return;
+            }
+
+            let html = '';
+            for (const m of materijali) {
+                let ponudeHtml = '';
+                if (m.ponude.length === 0) {
+                    ponudeHtml = '<p style="color:#bdc3c7; font-size:13px;">Nema ponuda.</p>';
+                } else {
+                    ponudeHtml = '<table style="margin-top:5px;"><thead><tr><th>Firma</th><th>Cena</th><th>Datum</th><th>Rok</th><th></th></tr></thead><tbody>';
+                    for (const p of m.ponude) {
+                        const najbolja = p.cena === m.najbolja_cena;
+                        ponudeHtml += `<tr style="${najbolja ? 'background:#d5f4e6;' : ''}">
+                            <td>${p.firma_naziv || '—'}</td>
+                            <td style="font-weight:${najbolja ? 'bold' : 'normal'};">${p.cena.toLocaleString('sr-RS')} RSD</td>
+                            <td>${p.datum_ponude}</td>
+                            <td>${p.rok_isporuke || '—'}</td>
+                            <td><button class="danger" onclick="obrisiPonudu(${p.id})">×</button></td>
+                        </tr>`;
+                    }
+                    ponudeHtml += '</tbody></table>';
+                }
+
+                html += `<div style="border:1px solid #eee; border-radius:6px; padding:15px; margin-bottom:15px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <strong style="font-size:16px;">${m.naziv}</strong>
+                            <span style="color:#7f8c8d;">(${m.jedinica})</span>
+                            ${m.najbolja_cena ? `<span style="background:#27ae60; color:white; padding:2px 8px; border-radius:10px; font-size:12px; margin-left:10px;">Najbolja: ${m.najbolja_cena.toLocaleString('sr-RS')} RSD (${m.najbolja_firma || '—'})</span>` : ''}
+                        </div>
+                        <button class="danger" onclick="obrisiMaterijal(${m.id})">Obriši</button>
+                    </div>
+                    ${ponudeHtml}
+                    <details style="margin-top:10px;">
+                        <summary style="cursor:pointer; color:#3498db; font-size:14px;">+ Dodaj ponudu</summary>
+                        <form onsubmit="dodajPonudu(event, ${m.id})" style="margin-top:10px; padding:10px; background:#f8f9fa; border-radius:6px;">
+                            <div class="grid-2">
+                                <div>
+                                    <label>Cena (RSD) *</label>
+                                    <input type="number" step="0.01" name="cena" required>
+                                </div>
+                                <div>
+                                    <label>Datum *</label>
+                                    <input type="date" name="datum_ponude" required>
+                                </div>
+                            </div>
+                            <div class="grid-2">
+                                <div>
+                                    <label>Firma</label>
+                                    <select name="firma_id">
+                                        <option value="">-- Bez firme --</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label>Rok isporuke</label>
+                                    <input type="text" name="rok_isporuke" placeholder="npr. 7 dana">
+                                </div>
+                            </div>
+                            <button type="submit" style="margin-top:8px;">Dodaj ponudu</button>
+                        </form>
+                    </details>
+                </div>`;
+            }
+            div.innerHTML = html;
+
+            // Popuni selecte za firme u svim formama
+            const firme = await (await fetch(`${API}/api/firme/`)).json();
+            document.querySelectorAll('#lista-materijala select[name="firma_id"]').forEach(sel => {
+                firme.forEach(f => {
+                    const opt = document.createElement('option');
+                    opt.value = f.id;
+                    opt.textContent = f.naziv;
+                    sel.appendChild(opt);
+                });
+            });
+        }
+
+        document.getElementById('forma-materijal').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            const podaci = Object.fromEntries(fd);
+            const poruka = document.getElementById('poruka-materijal');
+
+            const r = await fetch(`${API}/api/materijali/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(podaci)
+            });
+
+            if (r.ok) {
+                poruka.textContent = '✅ Sačuvano!';
+                poruka.style.color = '#27ae60';
+                e.target.reset();
+                ucitajMaterijale();
+                setTimeout(() => poruka.textContent = '', 3000);
+            } else {
+                poruka.textContent = '❌ Greška';
+                poruka.style.color = '#e74c3c';
+            }
+        });
+
+        async function dodajPonudu(e, materijalId) {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            const podaci = Object.fromEntries(fd);
+            podaci.materijal_id = materijalId;
+            podaci.cena = parseFloat(podaci.cena);
+            if (!podaci.firma_id) delete podaci.firma_id;
+
+            const r = await fetch(`${API}/api/materijali/${materijalId}/ponude`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(podaci)
+            });
+
+            if (r.ok) {
+                ucitajMaterijale();
+            } else {
+                alert('Greška pri dodavanju ponude');
+            }
+        }
+
+        async function obrisiPonudu(id) {
+            if (!confirm('Obrisati ponudu?')) return;
+            await fetch(`${API}/api/materijali/ponude/${id}`, { method: 'DELETE' });
+            ucitajMaterijale();
+        }
+
+        async function obrisiMaterijal(id) {
+            if (!confirm('Obrisati materijal i sve ponude?')) return;
+            await fetch(`${API}/api/materijali/${id}`, { method: 'DELETE' });
+            ucitajMaterijale();
+        }
+
+        // Inicijalno učitavanje
+        function ucitajSvePodatke() {
+            proveriStatus();
+            ucitajFirme();
+            ucitajFaze();
+            napuniSelecteZaTrosak();
+            ucitajTroskove();
+            ucitajRezime();
+            napuniSelecteZaPodsetnik();
+            ucitajPodsetnike();
+            ucitajRezimePodsetnika();
+            ucitajKapitale();
+            ucitajRezimeKapitala();
+            napuniSelecteZaDokumente();
+            ucitajDokumente();
+            proveriPushStatus();
+            ucitajGantt();
+            ucitajMaterijale();
+
+            // Datumi
+            const danas = new Date().toISOString().split('T')[0];
+            document.getElementById('trosak-datum').value = danas;
+            document.getElementById('podsetnik-datum').value = danas;
+            document.getElementById('kapital-datum').value = danas;
+        }
+
+        function proveriPrijavu() {
+            if (token) {
+                document.getElementById('login-ekran').style.display = 'none';
+                document.getElementById('glavna-aplikacija').style.display = 'block';
+                ucitajSvePodatke();
+            } else {
+                document.getElementById('login-ekran').style.display = 'flex';
+                document.getElementById('glavna-aplikacija').style.display = 'none';
+            }
+        }
+
+        // ===== PWA INSTALACIJA =====
+        let deferredPrompt = null;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('btn-instaliraj').style.display = 'block';
+        });
+
+        document.getElementById('btn-instaliraj').addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log('Instalacija:', outcome);
+            deferredPrompt = null;
+            document.getElementById('btn-instaliraj').style.display = 'none';
+        });
+
+        window.addEventListener('appinstalled', () => {
+            document.getElementById('btn-instaliraj').style.display = 'none';
+        });
+
+        // POKRETANJE APLIKACIJE (mora biti na samom dnu)
+        proveriPrijavu();
+
+    </script>
+</body>
+</html>
