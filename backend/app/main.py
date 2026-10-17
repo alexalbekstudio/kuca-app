@@ -15,26 +15,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
-# --- TRIK ZA RAILWAY: Sačekaj da baza bude spremna ---
-print("Povezivanje na bazu...")
-max_retries = 10
-for i in range(max_retries):
-    try:
-        # Pokušaj da se povežeš
-        with engine.connect() as conn:
-            conn.execute(text("SELECT 1"))
-        print("Baza je spremna!")
-        break
-    except OperationalError:
-        print(f"Baza još nije spremna, čekam... ({i+1}/{max_retries})")
-        time.sleep(3)
-else:
-    print("Upozorenje: Nije moguće povezati se na bazu nakon više pokušaja.")
-
-# Kreiraj tabele
-Base.metadata.create_all(bind=engine)
-# -----------------------------------------------------
-
 # Ostatak tvog main.py koda ostaje isti
 db = SessionLocal()
 try:
