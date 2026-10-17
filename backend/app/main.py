@@ -1,31 +1,44 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import text
+import time
+from sqlalchemy.exc import OperationalError
 
 from .database import engine, SessionLocal, Base
 from . import (
     models, models_faze, models_veze, models_troskovi,
-    models_podsetnici, models_push, models_kapital, models_dokumenti,  # noqa: F401
+    models_podsetnici, models_push, models_kapital, models_dokumenti, models_materijali,
 )
 from .init_faze import inicijalizuj_faze
 from .routers import (
-    firme, faze, veze, troskovi, podsetnici, push, kapital, dokumenti,
+    firme, faze, veze, troskovi, podsetnici, push, kapital, dokumenti, materijali,
 )
 from .scheduler import start_scheduler
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
-from . import models_korisnici
-from .routers import auth
-from .init_korisnici import inicijalizuj_korisnike
+# --- TRIK ZA RAILWAY: Sačekaj da baza bude spremna ---
+print("Povezivanje na bazu...")
+max_retries = 10
+for i in range(max_retries):
+    try:
+        # Pokušaj da se povežeš
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        print("Baza je spremna!")
+        break
+    except OperationalError:
+        print(f"Baza još nije spremna, čekam... ({i+1}/{max_retries})")
+        time.sleep(3)
+else:
+    print("Upozorenje: Nije moguće povezati se na bazu nakon više pokušaja.")
 
-from . import models_materijali
-from .routers import materijali
-
+# Kreiraj tabele
 Base.metadata.create_all(bind=engine)
+# -----------------------------------------------------
 
+# Ostatak tvog main.py koda ostaje isti
 db = SessionLocal()
 try:
     inicijalizuj_faze(db)
-    inicijalizuj_korisnike(db)
 finally:
     db.close()
 
@@ -51,18 +64,15 @@ app.include_router(podsetnici.router)
 app.include_router(push.router)
 app.include_router(kapital.router)
 app.include_router(dokumenti.router)
-app.include_router(auth.router)
 app.include_router(materijali.router)
 
 @app.on_event("startup")
 async def startup():
     start_scheduler()
 
-
 @app.get("/api/health")
 def health():
     return {"status": "ok", "app": "kuca-app"}
-
 
 @app.get("/api/db-check")
 def db_check():
