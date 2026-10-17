@@ -15,6 +15,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
+print("=== POKREĆEM KUCA APP BACKEND ===")
+
+# Kreiraj tabele
+Base.metadata.create_all(bind=engine)
 # Ostatak tvog main.py koda ostaje isti
 db = SessionLocal()
 try:
