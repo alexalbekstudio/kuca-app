@@ -18,7 +18,14 @@ from sqlalchemy import text
 print("=== POKREĆEM KUCA APP BACKEND ===")
 
 # Kreiraj tabele
-Base.metadata.create_all(bind=engine)
+try:
+    print("Povezujem se na bazu...")
+    Base.metadata.create_all(bind=engine)
+    print("Baza je povezana i tabele su kreirane!")
+except Exception as e:
+    print(f"GREŠKA PRI POVEZIVANJU NA BAZU: {e}")
+    # Nastavi dalje, da se server ipak pokrene
+
 # Ostatak tvog main.py koda ostaje isti
 db = SessionLocal()
 try:
