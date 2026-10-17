@@ -2,16 +2,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 import time
-from sqlalchemy.exc import OperationalError
 
 from .database import engine, SessionLocal, Base
 from . import (
     models, models_faze, models_veze, models_troskovi,
-    models_podsetnici, models_push, models_kapital, models_dokumenti, models_materijali,
+    models_podsetnici, models_push, models_kapital, models_dokumenti,
 )
 from .init_faze import inicijalizuj_faze
 from .routers import (
-    firme, faze, veze, troskovi, podsetnici, push, kapital, dokumenti, materijali,
+    firme, faze, veze, troskovi, podsetnici, push, kapital, dokumenti,
 )
 from .scheduler import start_scheduler
 
@@ -52,7 +51,6 @@ app.include_router(podsetnici.router)
 app.include_router(push.router)
 app.include_router(kapital.router)
 app.include_router(dokumenti.router)
-app.include_router(materijali.router)
 
 @app.on_event("startup")
 async def startup():
