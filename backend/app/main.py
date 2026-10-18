@@ -9,8 +9,9 @@ from . import (
     models_podsetnici, models_push, models_kapital, models_dokumenti,
 )
 from .init_faze import inicijalizuj_faze
+from .init_korisnici import inicijalizuj_korisnike  # <--- DODATO
 from .routers import (
-    firme, faze, veze, troskovi, podsetnici, push, kapital, dokumenti, auth,  # <--- DODATO auth
+    firme, faze, veze, troskovi, podsetnici, push, kapital, dokumenti, auth,
 )
 from .scheduler import start_scheduler
 
@@ -21,11 +22,14 @@ print("Povezujem se na bazu...")
 Base.metadata.create_all(bind=engine)
 print("✅ Tabele su kreirane!")
 
-# Inicijalizacija faza
+# Inicijalizacija faza i korisnika
 db = SessionLocal()
 try:
     inicijalizuj_faze(db)
     print("✅ Faze su inicijalizovane!")
+    
+    inicijalizuj_korisnike(db)  # <--- DODATO
+    print("✅ Korisnici su inicijalizovani!")
 finally:
     db.close()
 
@@ -44,7 +48,7 @@ app.add_middleware(
 )
 
 # REGISTRACIJA RUTERA
-app.include_router(auth.router)  # <--- DODATO (veoma važno!)
+app.include_router(auth.router)
 app.include_router(firme.router)
 app.include_router(faze.router)
 app.include_router(veze.router)
