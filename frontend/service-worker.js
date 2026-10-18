@@ -1,26 +1,10 @@
-const CACHE_NAME = 'kuca-app-v1';
-const ASSETS_TO_CACHE = [
-    '/',
-    '/index.html',
-    '/manifest.json',
-    '/icon-192.png',
-    '/icon-512.png',
-    'https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css',
-    'https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js',
-];
+const CACHE_NAME = 'kuca-app-v2';
 
 self.addEventListener('install', (event) => {
-    console.log('Service Worker instaliran');
-    event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll(ASSETS_TO_CACHE).catch(err => console.warn('Greška pri keširanju:', err));
-        })
-    );
     self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-    console.log('Service Worker aktiviran');
     event.waitUntil(
         caches.keys().then((keys) => {
             return Promise.all(
@@ -35,59 +19,17 @@ self.addEventListener('activate', (event) => {
     self.clients.claim();
 });
 
-// Strategija: Prvo mreža, pa keš (Network First)
+// NE presreći API pozive - pusti ih direktno na mrežu
 self.addEventListener('fetch', (event) => {
-    // Ne keširaj API pozive
+    // Ako je API poziv, pusti ga direktno (nemoj keširati)
     if (event.request.url.includes('/api/')) {
         return;
     }
 
+    // Za ostale fajlove (HTML, CSS, slike) koristi mrežu
     event.respondWith(
-        fetch(event.request)
-            .then((response) => {
-                // Ako je uspešno, sačuvaj u keš
-                const responseClone = response.clone();
-                caches.open(CACHE_NAME).then((cache) => {
-                    cache.put(event.request, responseClone);
-                });
-                return response;
-            })
-            .catch(() => {
-                // Ako nema mreže, vrati iz keša
-                return caches.match(event.request);
-            })
-    );
-});
-
-// Push notifikacije
-self.addEventListener('push', (event) => {
-    let data = { title: 'Kuca App', body: 'Nova notifikacija', url: '/' };
-    if (event.data) {
-        try { data = event.data.json(); } catch (e) { data.body = event.data.text(); }
-    }
-    const options = {
-        body: data.body,
-        icon: '/icon-192.png',
-        badge: '/icon-192.png',
-        data: { url: data.url || '/' },
-        vibrate: [200, 100, 200],
-    };
-    event.waitUntil(self.registration.showNotification(data.title, options));
-});
-
-self.addEventListener('notificationclick', (event) => {
-    event.notification.close();
-    const url = event.notification.data.url || '/';
-    event.waitUntil(
-        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-            for (const client of clientList) {
-                if (client.url.includes(self.location.origin) && 'focus' in client) {
-                    return client.focus();
-                }
-            }
-            if (clients.openWindow) {
-                return clients.openWindow(url);
-            }
+        fetch(event.request).catch(() => {
+            return caches.match(event.request);
         })
     );
 });
