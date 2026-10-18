@@ -69,3 +69,7 @@ def db_check():
         return {"db": "ok", "version": version}
     except Exception as e:
         return {"db": "greška", "detail": str(e)}
+
+@app.get("/")
+def read_root():
+    return {"message": "Dobrodošli na Kuca App API!", "status": "aktivan"}
