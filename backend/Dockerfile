@@ -21,7 +21,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/app ./app
 
 # OVO JE KLJUČNO ZA RAILWAY
-EXPOSE 8000
+EXPOSE 8080
 
 # Railway ne koristi reload, već obično pokretanje
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
