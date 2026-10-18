@@ -15,6 +15,11 @@ from .routers import (
 )
 from .scheduler import start_scheduler
 
+from .routers import materijali  # na vrhu
+
+# ... i u delu sa include_router:
+app.include_router(materijali.router)
+
 print("=== POKREĆEM KUCA APP BACKEND ===")
 
 # Povezivanje na bazu
