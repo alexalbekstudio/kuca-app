@@ -1306,8 +1306,7 @@
             formData.append('username', email);
             formData.append('password', lozinka);
 
-            try {
-                const res = await originalFetch('/api/auth/login', {
+            const res = await originalFetch(`${API}/api/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: formData
@@ -2523,13 +2522,6 @@
                 poruka.textContent = '❌ Greška';
                 poruka.style.color = '#e74c3c';
             }
-        }
-
-        // Registruj Service Worker pri učitavanju (bez pretplate)
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/service-worker.js').catch(err => {
-                console.warn('Service Worker registracija neuspešna:', err);
-            });
         }
 
         // ===== KAPITAL =====
