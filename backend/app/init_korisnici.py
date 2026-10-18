@@ -6,17 +6,15 @@ def inicijalizuj_korisnike(db: Session):
     if db.query(Korisnik).count() > 0:
         return
 
-    # Tvoji podaci
     k1 = Korisnik(
         ime="Aleksandar",
         email="alexalbekstudio.design@gmail.com",
-        lozinka_hash=get_password_hash("Alex@+65!") # PROMENI OVO
+        lozinka_hash=get_password_hash("Kuca2026")
     )
-    # Podaci supruge
     k2 = Korisnik(
         ime="Slavica",
         email="swan.slavica@gmail.com",
-        lozinka_hash=get_password_hash("Alex@+65!") # PROMENI OVO
+        lozinka_hash=get_password_hash("Kuca2026")
     )
     
     db.add(k1)

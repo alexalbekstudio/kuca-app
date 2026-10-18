@@ -23,13 +23,6 @@ class KorisnikInfo(BaseModel):
 
 @router.post("/login", response_model=Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    # --- PRIVREMENI TEST ---
-    if form_data.username == "test@test.com" and form_data.password == "test123":
-        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = create_access_token(data={"sub": "test@test.com"}, expires_delta=access_token_expires)
-        return {"access_token": access_token, "token_type": "bearer"}
-    # -----------------------
-
     user = db.query(Korisnik).filter(Korisnik.email == form_data.username).first()
     if not user or not verify_password(form_data.password, user.lozinka_hash):
         raise HTTPException(
