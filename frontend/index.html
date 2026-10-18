@@ -1267,8 +1267,23 @@
         // Presreći sve fetch pozive da dodaju Authorization header
         const originalFetch = window.fetch;
         window.fetch = async function(...args) {
+            const [resource, config] = args;
+            
+            // Ako je API poziv (osim login-a), dodaj token
+            if (typeof resource === 'string' && resource.includes('/api/') && !resource.includes('/api/auth/login')) {
+                if (!config) args[1] = {};
+                if (!args[1].headers) args[1].headers = {};
+                args[1].headers['Authorization'] = `Bearer ${localStorage.getItem('kuca_token')}`;
+            }
+            
             try {
-                return await originalFetch(...args);
+                const response = await originalFetch(...args);
+                if (response.status === 401 && !resource.includes('/api/auth/login')) {
+                    // Ako token istekne, izbaci na login
+                    localStorage.removeItem('kuca_token');
+                    window.location.reload();
+                }
+                return response;
             } catch (error) {
                 if (error.message.includes('Failed to fetch') || error.message.includes('ERR_CERT')) {
                     console.warn('Ignorišem SSL grešku i pokušavam ponovo...');
