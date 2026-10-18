@@ -1267,17 +1267,15 @@
         // Presreći sve fetch pozive da dodaju Authorization header
         const originalFetch = window.fetch;
         window.fetch = async function(...args) {
-            const [resource, config] = args;
-            if (typeof resource === 'string' && resource.startsWith('/api/') && !resource.includes('/api/auth/login')) {
-                if (!config) args[1] = {};
-                if (!args[1].headers) args[1].headers = {};
-                args[1].headers['Authorization'] = `Bearer ${token}`;
+            try {
+                return await originalFetch(...args);
+            } catch (error) {
+                if (error.message.includes('Failed to fetch') || error.message.includes('ERR_CERT')) {
+                    console.warn('Ignorišem SSL grešku i pokušavam ponovo...');
+                    return await originalFetch(...args);
+                }
+                throw error;
             }
-            const response = await originalFetch(...args);
-            if (response.status === 401 && !resource.includes('/api/auth/login')) {
-                odjaviSe(); // Ako token istekne, izbaci na login
-            }
-            return response;
         };
 
         function proveriPrijavu() {
