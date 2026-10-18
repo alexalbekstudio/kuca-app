@@ -10,7 +10,7 @@ from . import (
 )
 from .init_faze import inicijalizuj_faze
 from .routers import (
-    firme, faze, veze, troskovi, podsetnici, push, kapital, dokumenti,
+    firme, faze, veze, troskovi, podsetnici, push, kapital, dokumenti, auth,  # <--- DODATO auth
 )
 from .scheduler import start_scheduler
 
@@ -43,6 +43,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# REGISTRACIJA RUTERA
+app.include_router(auth.router)  # <--- DODATO (veoma važno!)
 app.include_router(firme.router)
 app.include_router(faze.router)
 app.include_router(veze.router)
