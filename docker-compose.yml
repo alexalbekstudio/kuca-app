@@ -16,10 +16,10 @@ services:
       - coolify
 
   nginx:
-    build: ./nginx
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
     container_name: kuca-nginx
-    volumes:
-      - ./frontend:/usr/share/nginx/html:ro
     depends_on:
       - app
     networks:
