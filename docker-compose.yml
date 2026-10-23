@@ -3,7 +3,7 @@ services:
     build: ./backend
     container_name: kuca-app
     environment:
-      DATABASE_URL: postgresql://postgres:rn0IkZpeJ2xXYrqBiQcZZmYD0UuzOExEW6Yu6sKe0hoFl2ps0BD43JqqI9LoF2qT@kuca-db:5432/postgres
+      DATABASE_URL: postgresql://postgres:rn0IkZpeJ2xXYrqBiQcZZmYD0UuzOExEW6Yu6sKe0hoFl2ps0BD43JqqI9LoF2qT@3echsmew4tdsutbcrktbh3ph:5432/postgres
       SMTP_USER: "alexalbekstudio.design@gmail.com"
       SMTP_PASSWORD: "stcyzhsbnyhpujzy"
       EMAIL_PRIMALAC: "alexalbekstudio.design@gmail.com,swan.slavica@gmail.com"
