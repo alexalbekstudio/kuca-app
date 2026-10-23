@@ -3,7 +3,41 @@ services:
     build: ./backend
     container_name: kuca-app
     environment:
-      DATABASE_URL: postgresql://postgres:LOZINKA_KUCA_DB@kuca-db:5432/postgres
+      DATABASE_URL: postgresql://postgres:services:
+  app:
+    build: ./backend
+    container_name: kuca-app
+    environment:
+      DATABASE_URL: postgresql://postgres:rn0IkZpeJ2xXYrqBiQcZZmYD0UuzOExEW6Yu6sKe0hoFl2ps0BD43JqqI9LoF2qT@kuca-db:5432/postgres
+      SMTP_USER: "alexalbekstudio.design@gmail.com"
+      SMTP_PASSWORD: "stcyzhsbnyhpujzy"
+      EMAIL_PRIMALAC: "alexalbekstudio.design@gmail.com,swan.slavica@gmail.com"
+      VAPID_PRIVATE_KEY: "Db0L88nqFWQMTghZUi-CFCA3SHpIRKxir3CysNImjNE"
+      VAPID_PUBLIC_KEY: "BCea4DjU1AiOXw9u_g-AJ-yp7hoZyeZWIYHGEZEgDeJoYGYPrzzlkYHy1x52qOSr4lrcKTDj4pNucFPL-Eg1C_g"
+      VAPID_CLAIM_EMAIL: "mailto:alexalbekstudio.design@gmail.com"
+    volumes:
+      - ./backend/app:/app/app
+      - kuca_dokumenti:/data/dokumenti
+    networks:
+      - coolify
+
+  nginx:
+    image: nginx:alpine
+    container_name: kuca-nginx
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app
+    networks:
+      - coolify
+
+volumes:
+  kuca_dokumenti:
+
+networks:
+  coolify:
+    external: true@kuca-db:5432/postgres
       SMTP_USER: "alexalbekstudio.design@gmail.com"
       SMTP_PASSWORD: "stcyzhsbnyhpujzy"
       EMAIL_PRIMALAC: "alexalbekstudio.design@gmail.com,swan.slavica@gmail.com"
