@@ -1,73 +1,35 @@
 services:
-  db:
-    image: postgres:16
-    container_name: kuca-db
-    environment:
-      POSTGRES_USER: kuca
-      POSTGRES_PASSWORD: kuca_dev_password
-      POSTGRES_DB: kuca_db
-    volumes:
-      - kuca_db_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U kuca -d kuca_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   app:
     build: ./backend
     container_name: kuca-app
     environment:
-      DATABASE_URL: postgresql://kuca:kuca_dev_password@db:5432/kuca_db
+      DATABASE_URL: postgresql://postgres:LOZINKA_KUCA_DB@kuca-db:5432/postgres
       SMTP_USER: "alexalbekstudio.design@gmail.com"
       SMTP_PASSWORD: "stcyzhsbnyhpujzy"
       EMAIL_PRIMALAC: "alexalbekstudio.design@gmail.com,swan.slavica@gmail.com"
       VAPID_PRIVATE_KEY: "Db0L88nqFWQMTghZUi-CFCA3SHpIRKxir3CysNImjNE"
       VAPID_PUBLIC_KEY: "BCea4DjU1AiOXw9u_g-AJ-yp7hoZyeZWIYHGEZEgDeJoYGYPrzzlkYHy1x52qOSr4lrcKTDj4pNucFPL-Eg1C_g"
       VAPID_CLAIM_EMAIL: "mailto:alexalbekstudio.design@gmail.com"
-    depends_on:
-      db:
-        condition: service_healthy
     volumes:
       - ./backend/app:/app/app
       - kuca_dokumenti:/data/dokumenti
+    networks:
+      - coolify
 
   nginx:
     image: nginx:alpine
     container_name: kuca-nginx
-    ports:
-      - "8080:80"
     volumes:
       - ./frontend:/usr/share/nginx/html:ro
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - app
-
-  backup:
-    image: docker:24-cli
-    container_name: kuca-backup
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./backup:/backup
-    environment:
-      - TZ=Europe/Belgrade
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        apk add --no-cache bash tzdata
-        cp /usr/share/zoneinfo/Europe/Belgrade /etc/localtime
-        echo "Backup servis pokrenut. Čekam 03:00..."
-        while true; do
-          NOW=$$(date +%H:%M)
-          if [ "$$NOW" = "03:00" ]; then
-            echo "[$$(date)] Pokrećem backup..."
-            sh /backup/backup.sh
-            sleep 60
-          fi
-          sleep 30
-        done
-    restart: unless-stopped
+    networks:
+      - coolify
 
 volumes:
-  kuca_db_data:
   kuca_dokumenti:
+
+networks:
+  coolify:
+    external: true
