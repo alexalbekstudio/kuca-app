@@ -11,7 +11,6 @@ services:
       VAPID_PUBLIC_KEY: "BCea4DjU1AiOXw9u_g-AJ-yp7hoZyeZWIYHGEZEgDeJoYGYPrzzlkYHy1x52qOSr4lrcKTDj4pNucFPL-Eg1C_g"
       VAPID_CLAIM_EMAIL: "mailto:alexalbekstudio.design@gmail.com"
     volumes:
-      - ./backend/app:/app/app
       - kuca_dokumenti:/data/dokumenti
     networks:
       - coolify
@@ -21,7 +20,7 @@ services:
     container_name: kuca-nginx
     volumes:
       - ./frontend:/usr/share/nginx/html:ro
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - app
     networks:
